@@ -49,4 +49,5 @@ export default {
   'menu.editor.koni': '拓扑编辑器',
   'menu.book': '图书',
   'menu.kLine': 'K线图',
+  'menu.categoryList': '品种列表',
 };

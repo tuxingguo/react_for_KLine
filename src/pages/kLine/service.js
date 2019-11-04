@@ -1,8 +1,25 @@
 import request from '@/utils/request';
 
-export async function queryData() {
-  return request('api/queryData');
+// export async function queryTick1MinData() {
+//   return request('server/kLine/queryTick1MinData');
+// }
+export async function queryNextTick1MinData(params) {
+  return request('/server/kLine/queryNextTick1MinData', {
+    method: 'POST',
+    data: { ...params },
+  });
 }
-export async function queryData2() {
-  return request('api/queryData2');
+
+export async function calculateProfit(params) {
+  return request('/server/kLine/calculateProfit', {
+    method: 'POST',
+    data: { ...params },
+  });
+}
+
+export async function getUserInfoById(params) {
+  return request('/server/user/getUserInfoById', {
+    method: 'POST',
+    data: { ...params, method: 'post' },
+  });
 }

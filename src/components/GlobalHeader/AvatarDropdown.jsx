@@ -27,7 +27,7 @@ class AvatarDropdown extends React.Component {
 
   render() {
     const { currentUser = {}, menu } = this.props;
-    console.log('===currentUser===', currentUser);
+    // console.log('===currentUser===', currentUser);
     if (!menu) {
       return (
         <span className={`${styles.action} ${styles.account}`}>

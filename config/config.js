@@ -27,11 +27,11 @@ const plugins = [
       },
       pwa: pwa
         ? {
-            workboxPluginMode: 'InjectManifest',
-            workboxOptions: {
-              importWorkboxFrom: 'local',
-            },
-          }
+          workboxPluginMode: 'InjectManifest',
+          workboxOptions: {
+            importWorkboxFrom: 'local',
+          },
+        }
         : false, // default close dll, because issue https://github.com/ant-design/ant-design-pro/issues/4665
       // dll features https://webpack.js.org/plugins/dll-plugin/
       // dll: {
@@ -103,26 +103,34 @@ export default {
           authority: ['admin', 'user'],
           routes: [
             {
-              path: '/welcome',
-              name: 'welcome',
-              icon: 'smile',
-              component: './welcome/Welcome',
+              path: '/home',
+              name: 'home',
+              icon: 'home',
+              component: './home/home',
             },
+            // {
+            //   name: 'book',
+            //   icon: 'book',
+            //   path: '/book',
+            //   component: './book/book',
+            // },
             {
-              name: 'book',
-              icon: 'book',
-              path: '/book',
-              component: './book/book',
+              name: 'categoryList',
+              icon: 'unordered-list',
+              path: '/categoryList',
+              component: './categoryList/categoryList',
             },
             {
               name: 'kLine',
               icon: 'rise',
-              path: '/kLine',
+              path: '/categoryList/kLine',
               component: './kLine/kLine',
+              hideInMenu: true,
             },
+
             {
               path: '/',
-              redirect: '/welcome',
+              redirect: '/home',
               authority: ['admin', 'user'],
             },
             {

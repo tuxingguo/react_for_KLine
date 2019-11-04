@@ -1,9 +1,7 @@
 import React from 'react';
-import { Card, Button, Table, Form, Select, Modal, message } from 'antd';
+import { message, PageHeader } from 'antd';
 
 // 下面是按需加载
-import echarts from 'echarts/lib/echarts'
-// 导入折线图
 import 'echarts/lib/chart/lines';
 import 'echarts/lib/component/tooltip';
 import 'echarts/lib/component/title';
@@ -11,22 +9,95 @@ import 'echarts/lib/component/legend';
 import 'echarts/lib/component/markPoint';
 import ReactEcharts from 'echarts-for-react';
 import { connect } from 'dva';
+import moment from 'moment';
+import router from 'umi/router';
+import CreateForm from './components/CreateForm';
+import OverModal from './components/OverModal';
+import OrderModal from './components/OrderModal';
 
-@connect(({ kLine }) => ({
+@connect(({ kLine, user }) => ({
     kLine,
-  }))
+    currentUser: user.currentUser,
+}))
+
 
 export default class Lines extends React.Component {
+    constructor(props) {
+        super(props);
+        const { location: { state } } = this.props;
+        const transCode = state.TRANSCODE;
+        console.log('transCode=', transCode);
+        this.state = {
+            ...super.state,
+            tempNum: 0,
+            instrumentId: 'ag1912',
+            transCode, // 合约品种
+            transUnit: 10, // 合约乘数
+            transMargin: 0.05, // 保证金比例
+            minPriceChange: 0.5,
+            isOpen: false,
+            orderVisible: false,
+        };
+    }
+
+    // 组件将要加载
     componentWillMount() {
         const { dispatch } = this.props;
         dispatch({
-            type: 'kLine/refresh',
+            type: 'kLine/getNextTick',
+            payload: {
+                orderCount: this.props.kLine.count,
+                isOrder: false,
+                isWatch: false,
+            },
+        });
+        const { currentUser = {} } = this.props;
+        dispatch({
+            type: 'kLine/getUserInfo',
+            payload: {
+                userId: currentUser.userId,
+            },
+        });
+    }
+
+    // 组件即将销毁
+    componentWillUnmount() {
+        this.clearTheComponent();
+    }
+
+    clearTheComponent = () => {
+        this.props.kLine.tickData = [];
+        this.props.kLine.isOver = false;
+        this.props.kLine.count = 0;
+        this.props.kLine.nextTick = [];
+        this.props.kLine.lastTick = [];
+        this.props.kLine.positionData = [];
+        this.props.kLine.handNum = 1;
+        this.props.kLine.direction = '1';
+        this.props.kLine.openOrClose = '1';
+        this.props.kLine.advisePrice = 0;
+        this.props.kLine.profitClose = 0;
+        this.props.kLine.profit = 0;
+        this.props.kLine.overVisible = false;
+        this.props.kLine.orderPrice = 0;
+        this.props.kLine.fields = [];
+    }
+
+    handRestart = () => {
+        this.clearTheComponent();
+        const { dispatch } = this.props;
+        dispatch({
+            type: 'kLine/getNextTick',
+            payload: {
+                orderCount: this.props.kLine.count,
+                isOrder: false,
+                isWatch: false,
+            },
         });
     }
 
     getOption = () => {
         // 数据意义：开盘(open)，收盘(close)，最低(lowest)，最高(highest) 成交量(volume)
-
         function splitData(rawData) {
             const categoryData = [];
             const values = [];
@@ -34,7 +105,9 @@ export default class Lines extends React.Component {
             for (let i = 0; i < rawData.length; i += 1) {
                 const arr = [rawData[i][0], rawData[i][1], rawData[i][2], rawData[i][3], rawData[i][4], rawData[i][5]];
                 values.push(arr);
-                categoryData.push(arr.splice(0, 1)[0]);
+                const a = arr.splice(0, 1)[0];
+                const b = `${moment(a).format('YYYY/MM/DD')} ${rawData[i][6]}`;
+                categoryData.push(b);
                 volumes.push(arr[4]);
             }
             return {
@@ -45,9 +118,10 @@ export default class Lines extends React.Component {
         }
 
         const {
-            kLine: { rawData },
-          } = this.props;
-        const data = splitData(rawData);
+            kLine: { tickData },
+        } = this.props;
+
+        const data = splitData(tickData);
 
         // MA计算公式
         function calculateMA(dayCount, values) {
@@ -94,12 +168,12 @@ export default class Lines extends React.Component {
             }, {
                 left: '5%',
                 right: '1%',
-                top: '73%',
+                top: '75%',
                 height: '16%',
             }, {
                 left: '5%',
                 right: '1%',
-                top: '83%',
+                top: '87%',
                 height: '8%',
             }],
             xAxis: [{
@@ -130,7 +204,7 @@ export default class Lines extends React.Component {
                 gridIndex: 2,
                 axisLine: { show: false },
                 axisTick: { show: false },
-                data: data.categoryData,
+                // data: data.categoryData,
                 axisLabel: {
                     show: false,
                 },
@@ -183,7 +257,7 @@ export default class Lines extends React.Component {
                 show: true,
                 xAxisIndex: [0, 1],
                 type: 'slider',
-                top: '93%',
+                top: '95%',
                 height: '4%',
                 start: 30,
                 end: 100,
@@ -233,10 +307,10 @@ export default class Lines extends React.Component {
                 smooth: true,
                 showSymbol: false,
                 lineStyle: {
-                normal: {
-                    width: 1,
+                    normal: {
+                        width: 1,
+                    },
                 },
-            },
             }, {
                 name: 'MA10',
                 type: 'line',
@@ -244,10 +318,10 @@ export default class Lines extends React.Component {
                 smooth: true,
                 showSymbol: false,
                 lineStyle: {
-                normal: {
-                    width: 1,
+                    normal: {
+                        width: 1,
+                    },
                 },
-            },
             }, {
                 name: 'MA20',
                 type: 'line',
@@ -255,10 +329,10 @@ export default class Lines extends React.Component {
                 smooth: true,
                 showSymbol: false,
                 lineStyle: {
-                normal: {
-                    width: 1,
+                    normal: {
+                        width: 1,
+                    },
                 },
-            },
             }, {
                 name: 'MA30',
                 type: 'line',
@@ -266,35 +340,335 @@ export default class Lines extends React.Component {
                 smooth: true,
                 showSymbol: false,
                 lineStyle: {
-                normal: {
-                    width: 1,
+                    normal: {
+                        width: 1,
+                    },
                 },
-            },
             }],
         }
         return option
     }
 
-    handleFresh() {
+    handleOrder = fields => {
+        this.props.kLine.advisePrice = fields.price; // 修复点击下单价格复位的情况
+        this.setState({
+            tempNum: fields.num, // 重新渲染
+        });
+
+        if (fields.price * fields.num * this.state.transUnit * this.state.transMargin > this.props.kLine.availableFund) {
+            message.error('资金不足');
+            return;
+        }
+
+        if (this.props.kLine.positionData.length === 0 && fields.openOrClose === '2') {
+            message.error('当前没有仓位，请先开仓');
+            return;
+        }
+        this.props.kLine.handNum = fields.num;
+        this.props.kLine.direction = fields.direction;
+        this.props.kLine.openOrClose = fields.openOrClose;
+        this.props.kLine.orderPrice = fields.price;
+
+        this.props.kLine.fields = fields;
+        this.setState({
+            orderVisible: true, // 重新渲染
+        });
+    }
+
+    // 模态框点击下单确认
+    confirmOrder = () => {
+        this.setState({ // 触发渲染
+            orderVisible: false,
+        });
+        this.orderProcess(this.props.kLine.fields);
+    }
+
+    // 模态框点击取消
+    cancelOrder = () => {
+        this.setState({ // 触发渲染
+            orderVisible: false,
+        });
+    }
+
+    // 开始下单
+    orderProcess = fields => {
+        const tempNextTick = this.props.kLine.nextTick;
+        // fields.price = fields.price > tempNextTick[4] ? tempNextTick[4] : fields.price; // 考虑下如何实现
+
+        // 将处理逻辑放在了前端，更加方便
+        if (fields.openOrClose === '1') { // 开仓
+            let profit = 0;
+            if (fields.direction === '1') { // 买
+                profit = Number(((tempNextTick[2] - fields.price) * fields.num * this.state.transUnit).toFixed(2)); // 浮动盈亏(最新价-开仓价)*手数*合约乘数
+            } else { // 卖
+                profit = Number(((fields.price - tempNextTick[2]) * fields.num * this.state.transUnit).toFixed(2)); // 浮动盈亏(开仓价-最新价)*手数*合约乘数
+            }
+            const bond = Number((fields.price * fields.num * this.state.transUnit * this.state.transMargin).toFixed(2)); // 保证金
+
+            this.recordPositionData('ag1912', fields.num, fields.direction, fields.price, profit, bond); // 合约号、买卖方向、开仓成本、浮动盈亏、保证金
+        } else { // 平仓
+            const a = this.closePositionData(fields.direction, fields.num, fields.price);
+            if (!a) { return; }
+        }
+
+        // 下单成功，这里开始计算该客户的盈亏情况
+        let tempBond = 0;
+        this.props.kLine.profit = 0;
+        this.props.kLine.positionData.map(item => {
+            tempBond += item.BOND; // 保证金
+            this.props.kLine.profit += item.PROFITINPOSIOTION; //  浮动盈亏
+        });
+
+        this.props.kLine.currentInterest = this.props.kLine.currentInterest +
+            this.props.kLine.profit + this.props.kLine.profitClose;
+
+        this.props.kLine.availableFund = this.props.kLine.availableFund - tempBond
+            + this.props.kLine.profitClose;
+
+        const { currentUser = {} } = this.props;
         const { dispatch } = this.props;
         dispatch({
-          type: 'kLine/refresh2',
+            type: 'kLine/calculateProfit',
+            payload: {
+                userId: currentUser.userId,
+                profitInPosition: this.props.kLine.profit, // 浮动盈亏
+                profitInClosePosition: this.props.kLine.profitClose, // 平仓盈亏
+                bond: tempBond, // 保证金
+                currentInterest: this.props.kLine.currentInterest,
+                availableFund: this.props.kLine.availableFund,
+            },
         });
-        message.success('刷新成功');
-      }
+
+        this.props.kLine.count = this.props.kLine.count + 1; // 下单数加1
+
+        // 加载下一条K线
+        dispatch({
+            type: 'kLine/getNextTick',
+            payload: {
+                orderCount: this.props.kLine.count,
+                isOrder: true,
+                isWatch: false,
+            },
+        });
+    }
+
+    // 观望
+    handleWatchOn = () => {
+        this.props.kLine.count = this.props.kLine.count + 1; // count数加1
+        const { dispatch } = this.props;
+        dispatch({
+            type: 'kLine/getNextTick',
+            payload: {
+                orderCount: this.props.kLine.count,
+                isOrder: false,
+                isWatch: true,
+            },
+        });
+        const contrastPrice = this.props.kLine.nextTick[2];
+        let tempProfit = 0;
+        // 需要计算持仓盈亏，遍历持仓数据
+        this.props.kLine.profit = 0;
+        this.props.kLine.positionData.map(item => {
+            // 判断方向
+            if (item.DIRECTION === '1') {
+                tempProfit = Number(((contrastPrice - item.OPENCOST) * item.NUM * this.state.transUnit).toFixed(2));
+            } else {
+                tempProfit = Number(((item.OPENCOST - contrastPrice) * item.NUM * this.state.transUnit).toFixed(2));
+            }
+            item.PROFITINPOSIOTION = tempProfit;
+            this.props.kLine.profit += tempProfit;
+        });
+    }
+
+    // 持仓函数
+    recordPositionData = (instrumentId, num, direction, openCost, profitInPosition, bond) => {
+        let flag = false;
+        this.props.kLine.positionData.map(item => { // 判断之前的持仓方向
+            if (item.DIRECTION === direction) {
+                flag = true;
+                // 多仓位计算
+                item.OPENCOST = Number(((item.OPENCOST * item.NUM + openCost * num) / (item.NUM + num)).toFixed(1)); // 计算平均开仓价
+                item.NUM += num;
+                if (direction === '1') {
+                    item.PROFITINPOSIOTION = Number(((this.props.kLine.nextTick[2] - item.OPENCOST) * item.NUM * this.state.transUnit).toFixed(2));
+                } else {
+                    item.PROFITINPOSIOTION = Number(((item.OPENCOST - this.props.kLine.nextTick[2]) * item.NUM * this.state.transUnit).toFixed(2));
+                }
+                item.BOND = Number((item.OPENCOST * item.NUM * this.state.transUnit * this.state.transMargin).toFixed(2));
+            }
+        });
+        const len = this.props.kLine.positionData.length;
+        if (flag === false || len === 0) {
+            this.props.kLine.positionData.push({
+                keyId: len + 1,
+                INSTRUMENTID: instrumentId,
+                NUM: num,
+                DIRECTION: direction,
+                OPENCOST: openCost,
+                PROFITINPOSIOTION: profitInPosition,
+                BOND: bond,
+            });
+        }
+    }
+
+    // 平仓函数
+    closePositionData = (direction, num, cloPrice) => {
+        console.log('cloPrice=', cloPrice);
+        // 由于是平仓，则取方向的相反位
+        const direction2 = direction === '1' ? '2' : '1';
+        let flag = false;
+        let isAllClose = false;
+        let closeIndex = 0;
+        let profitClose = 0; // 平仓盈亏
+        let lower = false;
+        const nextTickPrice = this.props.kLine.nextTick[2];
+        this.props.kLine.positionData.map((item, index) => {
+            if (direction2 === item.DIRECTION) { // 找到了对应的将要平掉的持仓
+                if (num > item.NUM) {
+                    lower = true;
+                    return;
+                }
+                flag = true;
+                if (direction2 === '1') { // 表示卖平，则用 平仓价 - 开仓价
+                    profitClose = Number(((cloPrice - item.OPENCOST) * num * this.state.transUnit).toFixed(2));
+                    item.NUM -= num;
+                    if (item.NUM === 0) {
+                        isAllClose = true;
+                        closeIndex = index;
+                    }
+                    item.PROFITINPOSIOTION = Number(((nextTickPrice - item.OPENCOST) * item.NUM * this.state.transUnit).toFixed(2));
+                } else { // 买平,则用 开仓价 - 平仓价
+                    console.log('item.OPENCOST=', item.OPENCOST);
+                    console.log('cloPrice=', cloPrice);
+                    console.log('num=', num);
+
+                    profitClose = Number(((item.OPENCOST - cloPrice) * num * this.state.transUnit).toFixed(2));
+                    item.NUM -= num;
+                    if (item.NUM === 0) {
+                        isAllClose = true;
+                        closeIndex = index;
+                    }
+                    item.PROFITINPOSIOTION = Number(((item.OPENCOST - nextTickPrice) * item.NUM * this.state.transUnit).toFixed(2));
+                }
+                this.props.kLine.profitClose += profitClose; // 平仓盈亏
+
+                // 加上平掉的保证金
+                const passBond = Number((item.OPENCOST * num * this.state.transUnit * this.state.transMargin).toFixed(2));
+                this.props.kLine.availableFund += passBond;
+                // 减去平掉的保证金
+                item.BOND -= passBond;
+            }
+        });
+        if (lower === true) {
+            message.error('仓位不足');
+            return false;
+        }
+        if (flag === false) {
+            message.error('该方向暂无持仓，无法进行平仓操作');
+            return false;
+        }
+        if (isAllClose === true) {
+            this.props.kLine.positionData.splice(closeIndex, 1); // 删除全平的持仓
+            this.props.kLine.positionData.map((item, index) => { // 重置下标
+                item.keyId = index + 1;
+            });
+        }
+        return true;
+    }
+
+    getDefaultVlaue = record => {
+        this.props.kLine.handNum = record.NUM;
+        this.props.kLine.direction = record.DIRECTION === '1' ? '2' : '1';
+        this.props.kLine.openOrClose = '2';
+        this.setState({ // 重新渲染
+            tempNum: 0,
+        });
+    }
+
+    back = () => {
+        router.push('/categoryList');
+    }
+
+    confirmOver = () => {
+        this.props.kLine.overVisible = false;
+        this.setState({ // 触发渲染
+            tempNum: 0,
+        });
+    }
+
+    openCollapse = key => {
+        this.setState({
+            isOpen: key.length !== 0,
+        });
+    }
 
     render() {
+        const parentMethods = {
+            handleOrder: this.handleOrder,
+            handleWatchOn: this.handleWatchOn,
+            handRestart: this.handRestart,
+            getDefaultVlaue: this.getDefaultVlaue,
+            openCollapse: this.openCollapse,
+        };
+
+        const parentMethods2 = {
+            confirmOrder: this.confirmOrder,
+            cancelOrder: this.cancelOrder,
+        }
+
+        const parentMethods3 = {
+            confirmOver: this.confirmOver,
+        }
+
+        const {
+            kLine: { positionData, direction, profitClose, profit, overVisible, currentInterest,
+                count, advisePrice, handNum, isOver, openOrClose, orderPrice },
+        } = this.props;
+
+        const { isOpen, minPriceChange, orderVisible, instrumentId } = this.state;
+
+        console.log('重新渲染了');
+
         return (
             <div>
-                <Card title="K线图">
+                <PageHeader title="K线图" onBack={() => this.back()} style={{
+                    border: '1px solid rgb(235, 237, 240)',
+                }}>
                     <ReactEcharts
                         option={this.getOption()}
                         theme="Imooc"
-                        style={{ height: '550px' }} />
-                </Card>
-                <span>
-                    <Button type="primary" onClick={ () => this.handleFresh()} >刷新</Button>
-                </span>
+                        style={{ height: isOpen === false ? '540px' : '300px' }} />
+                </PageHeader>
+                <CreateForm
+                    {...parentMethods}
+                    advisePrice={advisePrice}
+                    handNum={handNum}
+                    isOver={isOver}
+                    count={count} // 操作次数
+                    positionData={positionData} // 持仓数据
+                    direction={direction} // 买卖
+                    openOrClose={openOrClose} // 开平
+                    profitClose={profitClose} // 平仓权益
+                    profit={profit} // 持仓权益
+                    currentInterest={currentInterest}
+                    minPriceChange={minPriceChange}
+
+                />
+                <div>
+                    <OrderModal
+                        {...parentMethods2}
+                        instrumentId={instrumentId}
+                        direction={direction}
+                        openOrClose={openOrClose}
+                        handNum={handNum}
+                        orderprice={orderPrice}
+                        modalVisible={orderVisible} />
+                </div>
+                <div>
+                    <OverModal
+                        {...parentMethods3}
+                        modalVisible={overVisible} />
+                </div>
             </div>
         )
     }

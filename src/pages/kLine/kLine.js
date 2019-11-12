@@ -1,5 +1,5 @@
 import React from 'react';
-import { message, PageHeader } from 'antd';
+import { message, PageHeader, Spin } from 'antd';
 
 // 下面是按需加载
 import 'echarts/lib/chart/lines';
@@ -26,15 +26,16 @@ export default class Lines extends React.Component {
         super(props);
         const { location: { state } } = this.props;
         const transCode = state.TRANSCODE;
-        console.log('transCode=', transCode);
+        const { HYCS } = state;
+        const { ZXDBJ } = state;
+        const { BZJB } = state;
         this.state = {
             ...super.state,
             tempNum: 0,
-            instrumentId: 'ag1912',
             transCode, // 合约品种
-            transUnit: 10, // 合约乘数
-            transMargin: 0.05, // 保证金比例
-            minPriceChange: 0.5,
+            transUnit: HYCS, // 合约乘数
+            transMargin: BZJB, // 保证金比例
+            minPriceChange: ZXDBJ, // 最小变动价
             isOpen: false,
             orderVisible: false,
         };
@@ -43,19 +44,17 @@ export default class Lines extends React.Component {
     // 组件将要加载
     componentWillMount() {
         const { dispatch } = this.props;
-        dispatch({
-            type: 'kLine/getNextTick',
-            payload: {
-                orderCount: this.props.kLine.count,
-                isOrder: false,
-                isWatch: false,
-            },
-        });
         const { currentUser = {} } = this.props;
         dispatch({
             type: 'kLine/getUserInfo',
             payload: {
                 userId: currentUser.userId,
+            },
+        });
+        dispatch({
+            type: 'kLine/getOriginTickData',
+            payload: {
+                transCode: this.state.transCode,
             },
         });
     }
@@ -80,6 +79,7 @@ export default class Lines extends React.Component {
         this.props.kLine.profit = 0;
         this.props.kLine.overVisible = false;
         this.props.kLine.orderPrice = 0;
+        this.props.kLine.tempProfitClose = 0;
         this.props.kLine.fields = [];
     }
 
@@ -90,8 +90,10 @@ export default class Lines extends React.Component {
             type: 'kLine/getNextTick',
             payload: {
                 orderCount: this.props.kLine.count,
-                isOrder: false,
-                isWatch: false,
+                tradingDay: this.props.kLine.tradingDay,
+                mainContract: this.props.kLine.mainContract,
+                start: this.props.kLine.start,
+                end: this.props.kLine.end,
             },
         });
     }
@@ -103,7 +105,8 @@ export default class Lines extends React.Component {
             const values = [];
             const volumes = [];
             for (let i = 0; i < rawData.length; i += 1) {
-                const arr = [rawData[i][0], rawData[i][1], rawData[i][2], rawData[i][3], rawData[i][4], rawData[i][5]];
+                const arr = [rawData[i][0], rawData[i][1], rawData[i][2],
+                rawData[i][3], rawData[i][4], rawData[i][5]];
                 values.push(arr);
                 const a = arr.splice(0, 1)[0];
                 const b = `${moment(a).format('YYYY/MM/DD')} ${rawData[i][6]}`;
@@ -355,7 +358,8 @@ export default class Lines extends React.Component {
             tempNum: fields.num, // 重新渲染
         });
 
-        if (fields.price * fields.num * this.state.transUnit * this.state.transMargin > this.props.kLine.availableFund) {
+        if (fields.price * fields.num * this.state.transUnit * this.state.transMargin >
+            this.props.kLine.availableFund) {
             message.error('资金不足');
             return;
         }
@@ -393,23 +397,43 @@ export default class Lines extends React.Component {
     // 开始下单
     orderProcess = fields => {
         const tempNextTick = this.props.kLine.nextTick;
-        // fields.price = fields.price > tempNextTick[4] ? tempNextTick[4] : fields.price; // 考虑下如何实现
+        // fields.price = fields.price > tempNextTick[4] ? tempNextTick[4]
+        // : fields.price; // 考虑下如何实现
 
         // 将处理逻辑放在了前端，更加方便
         if (fields.openOrClose === '1') { // 开仓
             let profit = 0;
             if (fields.direction === '1') { // 买
-                profit = Number(((tempNextTick[2] - fields.price) * fields.num * this.state.transUnit).toFixed(2)); // 浮动盈亏(最新价-开仓价)*手数*合约乘数
+                profit = Number(((tempNextTick[2] - fields.price) * fields.num *
+                    this.state.transUnit).toFixed(2)); // 浮动盈亏(最新价-开仓价)*手数*合约乘数
             } else { // 卖
-                profit = Number(((fields.price - tempNextTick[2]) * fields.num * this.state.transUnit).toFixed(2)); // 浮动盈亏(开仓价-最新价)*手数*合约乘数
+                profit = Number(((fields.price - tempNextTick[2]) * fields.num *
+                    this.state.transUnit).toFixed(2)); // 浮动盈亏(开仓价-最新价)*手数*合约乘数
             }
-            const bond = Number((fields.price * fields.num * this.state.transUnit * this.state.transMargin).toFixed(2)); // 保证金
+            const bond = Number((fields.price * fields.num * this.state.transUnit *
+                this.state.transMargin).toFixed(2)); // 保证金
 
-            this.recordPositionData('ag1912', fields.num, fields.direction, fields.price, profit, bond); // 合约号、买卖方向、开仓成本、浮动盈亏、保证金
+            this.recordPositionData(this.props.kLine.mainContract, fields.num,
+                fields.direction, fields.price, profit, bond); // 合约号、买卖方向、开仓成本、浮动盈亏、保证金
         } else { // 平仓
             const a = this.closePositionData(fields.direction, fields.num, fields.price);
             if (!a) { return; }
         }
+
+        const { dispatch } = this.props;
+        this.props.kLine.count = this.props.kLine.count + 1; // 下单数加1
+
+        // 加载下一条K线
+        dispatch({
+            type: 'kLine/getNextTick',
+            payload: {
+                orderCount: this.props.kLine.count,
+                mainContract: this.props.kLine.mainContract,
+                tradingDay: this.props.kLine.tradingDay,
+                start: this.props.kLine.start,
+                end: this.props.kLine.end,
+            },
+        });
 
         // 下单成功，这里开始计算该客户的盈亏情况
         let tempBond = 0;
@@ -419,35 +443,22 @@ export default class Lines extends React.Component {
             this.props.kLine.profit += item.PROFITINPOSIOTION; //  浮动盈亏
         });
 
-        this.props.kLine.currentInterest = this.props.kLine.currentInterest +
+        this.props.kLine.tempCurrentInterest = this.props.kLine.currentInterest +
             this.props.kLine.profit + this.props.kLine.profitClose;
 
-        this.props.kLine.availableFund = this.props.kLine.availableFund - tempBond
+        const availableFund = this.props.kLine.availableFund - tempBond
             + this.props.kLine.profitClose;
 
         const { currentUser = {} } = this.props;
-        const { dispatch } = this.props;
         dispatch({
             type: 'kLine/calculateProfit',
             payload: {
                 userId: currentUser.userId,
                 profitInPosition: this.props.kLine.profit, // 浮动盈亏
-                profitInClosePosition: this.props.kLine.profitClose, // 平仓盈亏
+                profitInClosePosition: this.props.kLine.tempProfitClose, // 平仓盈亏
                 bond: tempBond, // 保证金
-                currentInterest: this.props.kLine.currentInterest,
-                availableFund: this.props.kLine.availableFund,
-            },
-        });
-
-        this.props.kLine.count = this.props.kLine.count + 1; // 下单数加1
-
-        // 加载下一条K线
-        dispatch({
-            type: 'kLine/getNextTick',
-            payload: {
-                orderCount: this.props.kLine.count,
-                isOrder: true,
-                isWatch: false,
+                currentInterest: this.props.kLine.tempCurrentInterest,
+                availableFund,
             },
         });
     }
@@ -455,13 +466,17 @@ export default class Lines extends React.Component {
     // 观望
     handleWatchOn = () => {
         this.props.kLine.count = this.props.kLine.count + 1; // count数加1
+        const { currentUser = {} } = this.props;
+        // 加载下一条K线
         const { dispatch } = this.props;
         dispatch({
             type: 'kLine/getNextTick',
             payload: {
                 orderCount: this.props.kLine.count,
-                isOrder: false,
-                isWatch: true,
+                tradingDay: this.props.kLine.tradingDay,
+                mainContract: this.props.kLine.mainContract,
+                start: this.props.kLine.start,
+                end: this.props.kLine.end,
             },
         });
         const contrastPrice = this.props.kLine.nextTick[2];
@@ -471,37 +486,55 @@ export default class Lines extends React.Component {
         this.props.kLine.positionData.map(item => {
             // 判断方向
             if (item.DIRECTION === '1') {
-                tempProfit = Number(((contrastPrice - item.OPENCOST) * item.NUM * this.state.transUnit).toFixed(2));
+                tempProfit = Number(((contrastPrice - item.OPENCOST) *
+                    item.NUM * this.state.transUnit).toFixed(2));
             } else {
-                tempProfit = Number(((item.OPENCOST - contrastPrice) * item.NUM * this.state.transUnit).toFixed(2));
+                tempProfit = Number(((item.OPENCOST - contrastPrice) *
+                    item.NUM * this.state.transUnit).toFixed(2));
             }
             item.PROFITINPOSIOTION = tempProfit;
             this.props.kLine.profit += tempProfit;
         });
+
+        // 观望，由于持仓盈亏在改变，所以需要实时更新当前权益
+        this.props.kLine.tempCurrentInterest = this.props.kLine.currentInterest +
+            this.props.kLine.profit + this.props.kLine.profitClose;
+        dispatch({
+            type: 'kLine/calculateProfit',
+            payload: {
+                userId: currentUser.userId,
+                profitInPosition: this.props.kLine.profit, // 浮动盈亏
+                currentInterest: this.props.kLine.tempCurrentInterest, // 当前权益
+            },
+        });
     }
 
     // 持仓函数
-    recordPositionData = (instrumentId, num, direction, openCost, profitInPosition, bond) => {
+    recordPositionData = (mainContract, num, direction, openCost, profitInPosition, bond) => {
         let flag = false;
         this.props.kLine.positionData.map(item => { // 判断之前的持仓方向
             if (item.DIRECTION === direction) {
                 flag = true;
                 // 多仓位计算
-                item.OPENCOST = Number(((item.OPENCOST * item.NUM + openCost * num) / (item.NUM + num)).toFixed(1)); // 计算平均开仓价
+                item.OPENCOST = Number(((item.OPENCOST * item.NUM + openCost * num) /
+                    (item.NUM + num)).toFixed(1)); // 计算平均开仓价
                 item.NUM += num;
                 if (direction === '1') {
-                    item.PROFITINPOSIOTION = Number(((this.props.kLine.nextTick[2] - item.OPENCOST) * item.NUM * this.state.transUnit).toFixed(2));
+                    item.PROFITINPOSIOTION = Number(((this.props.kLine.nextTick[2] - item.OPENCOST)
+                        * item.NUM * this.state.transUnit).toFixed(2));
                 } else {
-                    item.PROFITINPOSIOTION = Number(((item.OPENCOST - this.props.kLine.nextTick[2]) * item.NUM * this.state.transUnit).toFixed(2));
+                    item.PROFITINPOSIOTION = Number(((item.OPENCOST - this.props.kLine.nextTick[2])
+                        * item.NUM * this.state.transUnit).toFixed(2));
                 }
-                item.BOND = Number((item.OPENCOST * item.NUM * this.state.transUnit * this.state.transMargin).toFixed(2));
+                item.BOND = Number((item.OPENCOST * item.NUM * this.state.transUnit *
+                    this.state.transMargin).toFixed(2));
             }
         });
         const len = this.props.kLine.positionData.length;
         if (flag === false || len === 0) {
             this.props.kLine.positionData.push({
                 keyId: len + 1,
-                INSTRUMENTID: instrumentId,
+                INSTRUMENTID: mainContract,
                 NUM: num,
                 DIRECTION: direction,
                 OPENCOST: openCost,
@@ -513,7 +546,6 @@ export default class Lines extends React.Component {
 
     // 平仓函数
     closePositionData = (direction, num, cloPrice) => {
-        console.log('cloPrice=', cloPrice);
         // 由于是平仓，则取方向的相反位
         const direction2 = direction === '1' ? '2' : '1';
         let flag = false;
@@ -530,31 +562,31 @@ export default class Lines extends React.Component {
                 }
                 flag = true;
                 if (direction2 === '1') { // 表示卖平，则用 平仓价 - 开仓价
-                    profitClose = Number(((cloPrice - item.OPENCOST) * num * this.state.transUnit).toFixed(2));
+                    profitClose = Number(((cloPrice - item.OPENCOST) * num *
+                        this.state.transUnit).toFixed(2));
                     item.NUM -= num;
                     if (item.NUM === 0) {
                         isAllClose = true;
                         closeIndex = index;
                     }
-                    item.PROFITINPOSIOTION = Number(((nextTickPrice - item.OPENCOST) * item.NUM * this.state.transUnit).toFixed(2));
+                    item.PROFITINPOSIOTION = Number(((nextTickPrice - item.OPENCOST) *
+                        item.NUM * this.state.transUnit).toFixed(2));
                 } else { // 买平,则用 开仓价 - 平仓价
-                    console.log('item.OPENCOST=', item.OPENCOST);
-                    console.log('cloPrice=', cloPrice);
-                    console.log('num=', num);
-
-                    profitClose = Number(((item.OPENCOST - cloPrice) * num * this.state.transUnit).toFixed(2));
+                    profitClose = Number(((item.OPENCOST - cloPrice) * num *
+                        this.state.transUnit).toFixed(2));
                     item.NUM -= num;
                     if (item.NUM === 0) {
                         isAllClose = true;
                         closeIndex = index;
                     }
-                    item.PROFITINPOSIOTION = Number(((item.OPENCOST - nextTickPrice) * item.NUM * this.state.transUnit).toFixed(2));
+                    item.PROFITINPOSIOTION = Number(((item.OPENCOST - nextTickPrice) *
+                        item.NUM * this.state.transUnit).toFixed(2));
                 }
+                this.props.kLine.tempProfitClose = profitClose; // 记录一次平仓所产生的平仓盈亏
                 this.props.kLine.profitClose += profitClose; // 平仓盈亏
 
-                // 加上平掉的保证金
-                const passBond = Number((item.OPENCOST * num * this.state.transUnit * this.state.transMargin).toFixed(2));
-                this.props.kLine.availableFund += passBond;
+                const passBond = Number((item.OPENCOST * num * this.state.transUnit *
+                    this.state.transMargin).toFixed(2));
                 // 减去平掉的保证金
                 item.BOND -= passBond;
             }
@@ -621,20 +653,21 @@ export default class Lines extends React.Component {
         }
 
         const {
-            kLine: { positionData, direction, profitClose, profit, overVisible, currentInterest,
-                count, advisePrice, handNum, isOver, openOrClose, orderPrice },
+            kLine: { positionData, direction, profitClose, profit, overVisible, tempCurrentInterest,
+                count, advisePrice, handNum, isOver, openOrClose, orderPrice, mainContract, tickData },
         } = this.props;
 
-        const { isOpen, minPriceChange, orderVisible, instrumentId } = this.state;
+        const { isOpen, minPriceChange, orderVisible } = this.state;
 
         console.log('重新渲染了');
 
         return (
             <div>
-                <PageHeader title="K线图" onBack={() => this.back()} style={{
+                <PageHeader title={`K线图   ${mainContract === null ? '' : mainContract}`} onBack={() => this.back()} style={{
                     border: '1px solid rgb(235, 237, 240)',
                 }}>
                     <ReactEcharts
+                        showLoading={tickData.length === 0 ? true : false}
                         option={this.getOption()}
                         theme="Imooc"
                         style={{ height: isOpen === false ? '540px' : '300px' }} />
@@ -650,14 +683,14 @@ export default class Lines extends React.Component {
                     openOrClose={openOrClose} // 开平
                     profitClose={profitClose} // 平仓权益
                     profit={profit} // 持仓权益
-                    currentInterest={currentInterest}
+                    currentInterest={tempCurrentInterest}
                     minPriceChange={minPriceChange}
 
                 />
                 <div>
                     <OrderModal
                         {...parentMethods2}
-                        instrumentId={instrumentId}
+                        instrumentId={mainContract}
                         direction={direction}
                         openOrClose={openOrClose}
                         handNum={handNum}

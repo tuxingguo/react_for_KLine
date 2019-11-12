@@ -43,14 +43,28 @@ export default class PerformanceList extends Component {
         this.fetch();
     }
 
-    handleTrain = TRANSCODE => {
+    handleTrain = r => {
         router.push({
             pathname: '/categoryList/kLine',
             state: { // state字段可以自定义，如用params等也可以
-                TRANSCODE,
+                TRANSCODE: r.TRANSCODE,
+                HYCS: r.HYCS,
+                ZXDBJ: r.ZXDBJ,
+                BZJB: r.BZJB,
             },
         });
     }
+
+    handleSearchKeyChange = e => {
+        this.setState({
+            searchKey: e.target.value,
+        });
+      }
+
+    handleSearch() {
+        this.state.pagination.current = 1;
+        this.fetch();
+      }
 
     render() {
         const {
@@ -58,7 +72,7 @@ export default class PerformanceList extends Component {
         } = this.props;
 
         const actions = r => (
-            <a onClick={() => this.handleTrain(r.TRANSCODE)}>查看</a>
+            <a onClick={() => this.handleTrain(r)}>训练</a>
         );
 
         const columns = [
@@ -110,15 +124,15 @@ export default class PerformanceList extends Component {
                             <FormItem style={{ marginRight: 3 }}>
                                 <Input
                                     style={{ width: 160 }}
-                                    placeholder="品种名称"
+                                    placeholder="品种代码/名称"
                                     prefix={<Icon type="search" />}
-                                    // onChange={this.handleSearchKeyChange.bind(this)}
-                                    value={this.state.searchKey}
-                                // onPressEnter={this.handleSearch.bind(this)}
+                                    onChange={this.handleSearchKeyChange}
+                                    // value={this.state.searchKey}
+                                    onPressEnter={() => this.handleSearch()}
                                 />
                             </FormItem>
                             <FormItem style={{ marginRight: 0 }}>
-                                <Button size="default" type="primary">查询</Button>
+                                <Button size="default" type="primary" onClick={() => this.handleSearch()}>查询</Button>
                                 <Button size="default" style={{ marginLeft: 3 }}>刷新</Button>
                             </FormItem>
                         </Form>

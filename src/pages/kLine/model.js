@@ -1,4 +1,4 @@
-import { queryNextTick1MinData, calculateProfit, getUserInfoById } from './service';
+import { queryNextTick1MinData, calculateProfit, getUserInfoById, queryOriginTickData } from './service';
 
 const Model = {
   namespace: 'kLine',
@@ -21,10 +21,24 @@ const Model = {
 
     currentInterest: 0,
     availableFund: 0,
+    tempProfitClose: 0,
+    tempCurrentInterest: 0,
+
+    start: 0,
+    end: 0,
+    mainContract: null, // 主力合约
+    tradingDay: null, // 交易日
   },
 
   effects: {
 
+    *getOriginTickData({ payload }, { call, put }) {
+      const response = yield call(queryOriginTickData, payload);
+      yield put({
+        type: 'save',
+        payload: response,
+      });
+    },
     *getNextTick({ payload }, { call, put }) {
       const response = yield call(queryNextTick1MinData, payload);
       yield put({
@@ -43,26 +57,37 @@ const Model = {
     *getUserInfo({ payload, callback }, { call, put }) {
       const response = yield call(getUserInfoById, payload);
       yield put({
-          type: 'get',
-          payload: response,
+        type: 'get',
+        payload: response,
       });
       if (callback) callback();
-  },
+    },
   },
 
   // reducers：将数据返回给页面
   reducers: {
     save(state, action) {
       const len = action.payload.json_list.length;
+      let lt = []
+      if (len < 2){
+        lt = action.payload.json_list[len - 1];
+      }
+      else{
+        lt = action.payload.json_list[len - 2];
+      }
 
       return {
         ...state,
         nextTick: action.payload.json_list.splice(len - 1, len)[0],
-        lastTick: action.payload.json_list[len - 2],
+        lastTick: lt,
         tickData: action.payload.json_list,
         isOver: action.payload.isOver,
         overVisible: action.payload.isOver === true,
-        advisePrice: action.payload.json_list[len - 2][2],
+        advisePrice: lt[2],
+        mainContract: action.payload.mainContract,
+        tradingDay: action.payload.tradingDay,
+        start: action.payload.start,
+        end: action.payload.end,
       };
     },
     update(state, action) {
@@ -73,6 +98,7 @@ const Model = {
         ...state,
         currentInterest: action.payload.currentInterest,
         availableFund: action.payload.availableFund,
+        tempCurrentInterest: action.payload.currentInterest,
       };
     },
   },

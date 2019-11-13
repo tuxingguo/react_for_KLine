@@ -33,7 +33,7 @@ export default class Lines extends React.Component {
             ...super.state,
             tempNum: 0,
             transCode, // 合约品种
-            transUnit: HYCS, // 合约乘数
+            transUnit: (transCode === 'T' || transCode === 'TF') ? HYCS / 100 : HYCS,  // 合约乘数
             transMargin: BZJB, // 保证金比例
             minPriceChange: ZXDBJ, // 最小变动价
             isOpen: false,
@@ -396,6 +396,7 @@ export default class Lines extends React.Component {
 
     // 开始下单
     orderProcess = fields => {
+        console.log('合约乘数=', this.state.transUnit);
         const tempNextTick = this.props.kLine.nextTick;
         // fields.price = fields.price > tempNextTick[4] ? tempNextTick[4]
         // : fields.price; // 考虑下如何实现

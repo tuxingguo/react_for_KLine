@@ -12,6 +12,7 @@ import Authorized from '@/utils/Authorized';
 import RightContent from '@/components/GlobalHeader/RightContent';
 import { isAntDesignPro } from '@/utils/utils';
 import logo from '../assets/logo.svg';
+import xnqh from '../assets/xnqh.png'
 /**
  * use Authorized check all menu item
  */
@@ -29,7 +30,7 @@ const footerRender = (_, defaultDom) => {
 
   return (
     <>
-      {defaultDom}
+      {/* {defaultDom} */}
       <div
         style={{
           padding: '0px 24px 24px',
@@ -78,7 +79,7 @@ const BasicLayout = props => {
   return (
     <>
       <ProLayout
-        logo={logo}
+        logo={xnqh}
         onCollapse={handleMenuCollapse}
         menuItemRender={(menuItemProps, defaultDom) => {
           if (menuItemProps.isUrl) {

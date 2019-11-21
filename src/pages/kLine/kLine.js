@@ -1,5 +1,5 @@
 import React from 'react';
-import { message, PageHeader, Spin } from 'antd';
+import { message, PageHeader, Button, notification, Icon } from 'antd';
 
 // 下面是按需加载
 import 'echarts/lib/chart/lines';
@@ -33,7 +33,7 @@ export default class Lines extends React.Component {
             ...super.state,
             tempNum: 0,
             transCode, // 合约品种
-            transUnit: (transCode === 'T' || transCode === 'TF') ? HYCS / 100 : HYCS,  // 合约乘数
+            transUnit: (transCode === 'T' || transCode === 'TF') ? HYCS / 100 : HYCS, // 合约乘数
             transMargin: BZJB, // 保证金比例
             minPriceChange: ZXDBJ, // 最小变动价
             isOpen: false,
@@ -81,6 +81,7 @@ export default class Lines extends React.Component {
         this.props.kLine.orderPrice = 0;
         this.props.kLine.tempProfitClose = 0;
         this.props.kLine.fields = [];
+        this.props.kLine.strategyIsOpen = false;
     }
 
     handRestart = () => {
@@ -101,6 +102,7 @@ export default class Lines extends React.Component {
     getOption = () => {
         // 数据意义：开盘(open)，收盘(close)，最低(lowest)，最高(highest) 成交量(volume)
         function splitData(rawData) {
+            console.log('执行了');
             const categoryData = [];
             const values = [];
             const volumes = [];
@@ -142,7 +144,6 @@ export default class Lines extends React.Component {
             }
             return result;
         }
-
 
         const option = {
             title: {
@@ -434,6 +435,11 @@ export default class Lines extends React.Component {
                 start: this.props.kLine.start,
                 end: this.props.kLine.end,
             },
+            callback: res => {
+                if (this.props.kLine.strategyIsOpen === true) {
+                    this.calculatStrategy();
+                }
+            },
         });
 
         // 下单成功，这里开始计算该客户的盈亏情况
@@ -478,6 +484,11 @@ export default class Lines extends React.Component {
                 mainContract: this.props.kLine.mainContract,
                 start: this.props.kLine.start,
                 end: this.props.kLine.end,
+            },
+            callback: res => {
+                if (this.props.kLine.strategyIsOpen === true) {
+                    this.calculatStrategy();
+                }
             },
         });
         const contrastPrice = this.props.kLine.nextTick[2];
@@ -635,13 +646,126 @@ export default class Lines extends React.Component {
         });
     }
 
+    setStrategyTrue = () => {
+        this.setState({ // 触发渲染
+            tempNum: 0,
+        });
+        this.props.kLine.strategyIsOpen = true;
+        message.success('策略已经运行');
+    }
+
+    setStrategyFasle = () => {
+        this.setState({ // 触发渲染
+            tempNum: 0,
+        });
+        this.props.kLine.strategyIsOpen = false;
+        message.success('策略已经关闭');
+    }
+
+    calculatStrategy = () => {
+        const { option } = this.props.kLine;
+        const len = option.series[2].data.length; // 获取数据的长度
+        const lastDataMA5 = Number(option.series[2].data[len - 1]);
+        const lastDataMA30 = Number(option.series[5].data[len - 1]); // 最后一根MA
+
+        const lastSecDataMA5 = Number(option.series[2].data[len - 2]);
+        const lastSecDataMA30 = Number(option.series[5].data[len - 2]); // 倒数第二根MA
+
+        let goldOrDie = 0;
+        let duotouFlag = false;
+        let kongtouFlag = false;
+        // this.openNotification(1, true) // 测试
+        if (lastSecDataMA30 < lastSecDataMA5 && lastDataMA30 >= lastDataMA5) { // 死叉，均线下穿
+            // 平多仓 开空仓
+            // 检查仓位情况，是否存在多头持仓
+            goldOrDie = 1;
+            this.props.kLine.positionData.map(item => {
+                if (item.DIRECTION === '1') {
+                    duotouFlag = true; // 存在
+                }
+            });
+            this.openNotification(goldOrDie, duotouFlag)
+        }
+        if (lastSecDataMA5 < lastSecDataMA30 && lastDataMA5 >= lastDataMA30) { // 金叉，均线上传
+            // 平空仓 开多仓
+            // 检查仓位情况，是否存在空头持仓
+            goldOrDie = 2;
+            this.props.kLine.positionData.map(item => {
+                if (item.DIRECTION === '2') {
+                    kongtouFlag = true; // 存在
+                }
+            });
+            this.openNotification(goldOrDie, kongtouFlag)
+        }
+    }
+
+    openNotification = (goldOrDie, flag) => {
+        const key = `open${Date.now()}`;
+        const btn = (
+            <Button type="primary" size="small" onClick={() => notification.close(key)}>
+                知道了
+          </Button>
+        );
+        if (goldOrDie === 1 && flag === false) { // 死叉
+            notification.open({
+                message: '策略提示',
+                description:
+                    '短期均线由上向下穿越长期均线，宜开空仓。',
+                icon: <Icon type="smile" style={{ color: '#108ee9' }} />,
+                btn,
+                key,
+                duration: 0,
+            });
+        } else if (goldOrDie === 1 && flag === true) {
+            notification.open({
+                message: '策略提示',
+                description:
+                    '短期均线由上向下穿越长期均线，宜开空仓；检测到目前持有多头仓位，宜平多仓。',
+                icon: <Icon type="smile" style={{ color: '#108ee9' }} />,
+                btn,
+                key,
+                duration: 0,
+            });
+        }
+        if (goldOrDie === 2 && flag === false) { // 金叉
+            notification.open({
+                message: '策略提示',
+                description:
+                    '短期均线由下向上穿越长期均线，宜开多仓。',
+                icon: <Icon type="smile" style={{ color: '#108ee9' }} />,
+                btn,
+                key,
+                duration: 0,
+            });
+        } else if (goldOrDie === 2 && flag === true) {
+            notification.open({
+                message: '策略提示',
+                description:
+                    '短期均线由下向上穿越长期均线，宜开多仓；检测到目前持有空头仓位，宜平空仓。',
+                icon: <Icon type="smile" style={{ color: '#108ee9' }} />,
+                btn,
+                key,
+                duration: 0,
+            });
+        }
+    };
+
+
     render() {
+        const option = this.getOption();
+        this.props.kLine.option = option;
+
+        this.props.kLine.dataMA5 = option.series[2].data;
+        this.props.kLine.dataMA30 = option.series[5].data;
+
         const parentMethods = {
             handleOrder: this.handleOrder,
             handleWatchOn: this.handleWatchOn,
             handRestart: this.handRestart,
             getDefaultVlaue: this.getDefaultVlaue,
             openCollapse: this.openCollapse,
+            setStrategyTrue: this.setStrategyTrue,
+            setStrategyFasle: this.setStrategyFasle,
         };
 
         const parentMethods2 = {
@@ -655,7 +779,8 @@ export default class Lines extends React.Component {
 
         const {
             kLine: { positionData, direction, profitClose, profit, overVisible, tempCurrentInterest,
-                count, advisePrice, handNum, isOver, openOrClose, orderPrice, mainContract, tickData },
+                strategyIsOpen, count, advisePrice, handNum, isOver, openOrClose, orderPrice,
+                mainContract, tickData },
         } = this.props;
 
         const { isOpen, minPriceChange, orderVisible } = this.state;
@@ -668,8 +793,8 @@ export default class Lines extends React.Component {
                     border: '1px solid rgb(235, 237, 240)',
                 }}>
                     <ReactEcharts
-                        showLoading={tickData.length === 0 ? true : false}
-                        option={this.getOption()}
+                        showLoading={tickData.length === 0}
+                        option={option}
                         theme="Imooc"
                         style={{ height: isOpen === false ? '540px' : '300px' }} />
                 </PageHeader>
@@ -686,6 +811,7 @@ export default class Lines extends React.Component {
                     profit={profit} // 持仓权益
                     currentInterest={tempCurrentInterest}
                     minPriceChange={minPriceChange}
+                    strategyIsOpen={strategyIsOpen}
 
                 />
                 <div>

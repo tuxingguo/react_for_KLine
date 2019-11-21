@@ -127,6 +127,12 @@ export default {
               component: './kLine/kLine',
               hideInMenu: true,
             },
+            {
+              name: 'account',
+              icon: 'user',
+              path: '/myAccount',
+              component: './myAccount/myAccount',
+            },
 
             {
               path: '/',

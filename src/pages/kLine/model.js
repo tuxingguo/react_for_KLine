@@ -28,6 +28,9 @@ const Model = {
     end: 0,
     mainContract: null, // 主力合约
     tradingDay: null, // 交易日
+
+    strategyIsOpen: false, // 默认策略不开启
+    option: null,
   },
 
   effects: {
@@ -39,12 +42,15 @@ const Model = {
         payload: response,
       });
     },
-    *getNextTick({ payload }, { call, put }) {
+    *getNextTick({ payload, callback }, { call, put }) {
       const response = yield call(queryNextTick1MinData, payload);
       yield put({
         type: 'save',
         payload: response,
       });
+      if (callback && typeof callback === 'function') {
+        callback(response); // 返回结果
+      }
     },
     *calculateProfit({ payload, callback }, { call, put }) {
       const response = yield call(calculateProfit, payload);
@@ -69,10 +75,9 @@ const Model = {
     save(state, action) {
       const len = action.payload.json_list.length;
       let lt = []
-      if (len < 2){
+      if (len < 2) {
         lt = action.payload.json_list[len - 1];
-      }
-      else{
+      } else {
         lt = action.payload.json_list[len - 2];
       }
 

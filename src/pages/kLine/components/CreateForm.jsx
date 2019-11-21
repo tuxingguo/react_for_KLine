@@ -1,4 +1,4 @@
-import { Form, Row, Col, Radio, Button, InputNumber, Collapse, Card, Statistic, Progress, Icon, Tabs, Table } from 'antd';
+import { Form, Row, Col, Radio, Button, InputNumber, Collapse, Card, Statistic, Progress, Icon, Select, Table } from 'antd';
 import React from 'react';
 import numeral from 'numeral';
 import { FORM_ITEM_LAYOUT } from '../../../layout';
@@ -6,11 +6,14 @@ import styles from './style.less';
 
 const FormItem = Form.Item;
 const RadioGroup = Radio.Group;
+const { Option } = Select;
 
 const CreateForm = props => {
   const { form } = props;
-  const { handleOrder, handleWatchOn, handRestart, positionData, getDefaultVlaue, advisePrice, currentInterest,
-    handNum, isOver, profit, profitClose, count, direction, openOrClose, minPriceChange, openCollapse } = props;
+  const { handleOrder, handleWatchOn, handRestart, positionData, getDefaultVlaue,
+    advisePrice, currentInterest, handNum, isOver, profit, profitClose, count, direction,
+    openOrClose, minPriceChange, openCollapse, strategyIsOpen, setStrategyTrue,
+    setStrategyFasle } = props;
 
   const okHandle = () => {
     form.validateFieldsAndScroll((err, fieldsValue) => {
@@ -37,6 +40,14 @@ const CreateForm = props => {
 
   const callback = key => {
     openCollapse(key);
+  };
+
+  const openStrategy = () => {
+    setStrategyTrue();
+  };
+
+  const closeStrategy = () => {
+    setStrategyFasle();
   };
 
   const { Panel } = Collapse;
@@ -120,9 +131,9 @@ const CreateForm = props => {
 
   return (
     <Collapse style={{ margin: '1%' }} onChange={callback} >
-      <Panel header="打开交易面板">
-        <Progress percent={count * 10} status="active" />
-        <div style={{ float: 'left', width: '100%', height: '280px' }}>
+      <Panel header="打开交易面板" style={{ fontSize: '13px' }}>
+        <Progress percent={count * 10} status="active"/>
+        <div style={{ float: 'left', width: '100%', height: '290px' }}>
           <div style={{ width: '40%', float: 'left' }}>
             <Form>
               <Row gutter={8}>
@@ -187,10 +198,10 @@ const CreateForm = props => {
                       initialValue: advisePrice,
                     })(
                       <InputNumber
-                       min={0}
-                       max={10000}
-                       step={minPriceChange}
-                       precision={1}
+                        min={0}
+                        max={10000}
+                        step={minPriceChange}
+                        precision={1}
                       />,
                     )}
                   </FormItem>
@@ -211,6 +222,36 @@ const CreateForm = props => {
                     <Button type="danger" style={{ width: '25%', marginLeft: '10%' }} onClick={() => restartTest()}>再来一次</Button>
                   )
                 }
+                <Select defaultValue="双均线策略" style={{ width: '25%', fontSize: '12px', float: 'left', marginTop: '5%' }}>
+                  <Option value="1">双均线策略</Option>
+                </Select>
+
+              {
+                strategyIsOpen === false &&
+                (
+                  <div>
+                    <Button type="primary" size="small" onClick={() => openStrategy()}
+                      style={{ width: '15%', marginLeft: '10%', float: 'left', marginTop: '6%', backgroundColor: '#14b143', borderColor: '#14b143', fontSize: '13px' }} >启动</Button>
+                    <p style={{ float: 'left', marginTop: '7%', marginLeft: '2%', fontSize: '12px' }}>
+                      <Icon type="check-circle" theme="twoTone" twoToneColor="gray" />
+                      未运行
+                    </p>
+                  </div>
+                )
+              }
+              {
+                strategyIsOpen === true &&
+                (
+                  <div>
+                    <Button type="danger" size="small" onClick={() => closeStrategy()}
+                      style={{ width: '15%', marginLeft: '10%', float: 'left', marginTop: '6%', fontSize: '13px' }} >断开</Button>
+                    <p style={{ float: 'left', marginTop: '7%', marginLeft: '2%', fontSize: '12px', color: '#52c41a' }}>
+                      <Icon type="check-circle" theme="twoTone" twoToneColor="#52c41a" />
+                      已运行
+                    </p>
+                  </div>
+                )
+              }
               </div>
             </Form>
           </div>

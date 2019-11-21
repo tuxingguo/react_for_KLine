@@ -10,7 +10,7 @@ export default {
   menu: {
     locale: true,
   },
-  title: 'Ant Design Pro',
+  title: '期货下单投教系统',
   pwa: false,
   iconfontUrl: '',
 };

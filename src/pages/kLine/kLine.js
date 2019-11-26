@@ -14,6 +14,7 @@ import router from 'umi/router';
 import CreateForm from './components/CreateForm';
 import OverModal from './components/OverModal';
 import OrderModal from './components/OrderModal';
+import StopLossModal from './components/StopLossModal';
 
 @connect(({ kLine, user }) => ({
     kLine,
@@ -26,6 +27,7 @@ export default class Lines extends React.Component {
         super(props);
         const { location: { state } } = this.props;
         const transCode = state.TRANSCODE;
+        const transType = state.TRANSETYPE
         const { HYCS } = state;
         const { ZXDBJ } = state;
         const { BZJB } = state;
@@ -33,11 +35,20 @@ export default class Lines extends React.Component {
             ...super.state,
             tempNum: 0,
             transCode, // 合约品种
+            transType, // 品种名称
             transUnit: (transCode === 'T' || transCode === 'TF') ? HYCS / 100 : HYCS, // 合约乘数
             transMargin: BZJB, // 保证金比例
             minPriceChange: ZXDBJ, // 最小变动价
             isOpen: false,
             orderVisible: false,
+            lossVisible: false,
+            childrenDrawer1: false,
+            childrenDrawer2: false,
+            stopLoss: ZXDBJ * 10,
+            stopProfit: ZXDBJ * 20,
+            priceDifference: ZXDBJ * 10,
+            stopLossIsOpen1: false,
+            stopLossIsOpen2: false,
         };
     }
 
@@ -439,6 +450,12 @@ export default class Lines extends React.Component {
                 if (this.props.kLine.strategyIsOpen === true) {
                     this.calculatStrategy();
                 }
+                if (this.state.stopLossIsOpen1 === true) { // 表示开启了"限价止损/止盈"
+                    this.calculateStopLoss1();
+                }
+                if (this.state.stopLossIsOpen2 === true) { // 表示开启了"跟踪止损"
+                    this.calculateStopLoss2();
+                }
             },
         });
 
@@ -488,6 +505,12 @@ export default class Lines extends React.Component {
             callback: res => {
                 if (this.props.kLine.strategyIsOpen === true) {
                     this.calculatStrategy();
+                }
+                if (this.state.stopLossIsOpen1 === true) { // 表示开启了"限价止损/止盈"
+                    this.calculateStopLoss1();
+                }
+                if (this.state.stopLossIsOpen2 === true) { // 表示开启了"跟踪止损"
+                    this.calculateStopLoss2();
                 }
             },
         });
@@ -552,6 +575,10 @@ export default class Lines extends React.Component {
                 OPENCOST: openCost,
                 PROFITINPOSIOTION: profitInPosition,
                 BOND: bond,
+                highPrice: 0.00,
+                lowPrice: 0.00,
+                isStrike: false,
+                isStart: false,
             });
         }
     }
@@ -674,7 +701,7 @@ export default class Lines extends React.Component {
         let goldOrDie = 0;
         let duotouFlag = false;
         let kongtouFlag = false;
-        // this.openNotification(1, true) // 测试
+
         if (lastSecDataMA30 < lastSecDataMA5 && lastDataMA30 >= lastDataMA5) { // 死叉，均线下穿
             // 平多仓 开空仓
             // 检查仓位情况，是否存在多头持仓
@@ -750,6 +777,162 @@ export default class Lines extends React.Component {
         }
     };
 
+    openSetStopLoss = () => {
+        this.setState({
+            lossVisible: true,
+        });
+    }
+
+    mainDrawerClose = () => {
+        this.setState({
+            lossVisible: false,
+        });
+    }
+
+    openChildrenDrawer1 = () => {
+        this.setState({
+            childrenDrawer1: true,
+        });
+    }
+
+    closeStopLoss1 = () => {
+        this.setState({
+            stopLossIsOpen1: false,
+            childrenDrawer1: false,
+        });
+        message.success('限价止损/止盈已关闭！');
+    }
+
+    childrenDrawerClose1 = () => {
+        this.setState({
+            childrenDrawer1: false,
+        });
+    }
+
+    openChildrenDrawer2 = () => {
+        this.setState({
+            childrenDrawer2: true,
+        });
+    }
+
+    childrenDrawerClose2 = () => {
+        this.setState({
+            childrenDrawer2: false,
+        });
+    }
+
+    closeStopLoss2 = () => {
+        this.setState({
+            childrenDrawer2: false,
+            stopLossIsOpen2: false,
+        });
+        message.success('跟踪止损已关闭！');
+    }
+
+    setStartLoss1 = fieldsValue => {
+        // console.log('fieldsValue=', fieldsValue);
+        const { stopLoss } = fieldsValue;
+        const { stopProfit } = fieldsValue;
+        this.setState({
+            stopLoss,
+            stopProfit,
+            stopLossIsOpen1: true,
+            childrenDrawer1: false, // 关闭遮罩
+            stopLossIsOpen2: false,
+        });
+        message.success('限价止损/止盈已开启！');
+    }
+
+    setStartLoss2 = fieldsValue => {
+        const { priceDifference } = fieldsValue;
+        this.setState({
+            priceDifference,
+            stopLossIsOpen2: true,
+            childrenDrawer2: false, // 关闭遮罩
+            stopLossIsOpen1: false,
+        });
+        message.success('跟踪止损已开启！');
+    }
+
+    calculateStopLoss1 = () => {
+        const lastPrice = this.props.kLine.advisePrice; // 获得当前最新价
+        // console.log('lastPrice=', lastPrice);
+        const { stopLoss, stopProfit } = this.state; // 获得止盈止损价差
+        this.props.kLine.positionData.map(item => {
+            // console.log('item=', item);
+            if (item.DIRECTION === '1') {
+                if (lastPrice <= item.OPENCOST - stopLoss) { // 最新价低于买开仓价10个最小变动价位，多头止损
+                    this.openNotification2(item.keyId, '最新价低于买开仓价减去止损价差，建议多头止损。');
+                } else if (lastPrice >= item.OPENCOST + stopProfit) { // 最新价高于买开仓价20个最小变动价位，多头止赢
+                    this.openNotification2(item.keyId, '最新价高于买开仓价加上止盈价差，建议多头止盈。');
+                }
+            } else if (item.DIRECTION === '2') { // 表示空头
+                if (lastPrice >= item.OPENCOST + stopLoss) { // 高于卖开仓价10个最小变动价位，空头止损
+                    this.openNotification2(item.keyId, '最新价高于卖开仓价加上止损价差，建议空头止损。');
+                } else if (lastPrice <= item.OPENCOST - stopProfit) { // 低于卖开仓价20个最小变动价位，空头止赢
+                    this.openNotification2(item.keyId, '最新价低于卖开仓价减去止盈价差，建议空头止盈。');
+                }
+            }
+        });
+    }
+
+    openNotification2 = (posIndex, msg) => {
+        const key = `open${Date.now()}`;
+        const btn = (
+            <Button type="primary" size="small" onClick={() => notification.close(key)}>
+                知道了
+          </Button>
+        );
+        notification.open({
+            message: '止损/止盈提示',
+            description:
+                `持仓序号：${posIndex}，${msg}`,
+            icon: <Icon type="smile" style={{ color: '#108ee9' }} />,
+            btn,
+            key,
+            duration: 0,
+        });
+    };
+
+    calculateStopLoss2 = () => {
+        const lastPrice = this.props.kLine.advisePrice; // 获得当前最新价
+        const { priceDifference } = this.state; // 获得初始价差
+        this.props.kLine.positionData.map(item => { // 遍历当前仓位
+            if (item.DIRECTION === '1') {
+                if (lastPrice <= item.OPENCOST - priceDifference) { // 一直亏损，直接出场
+                    this.openNotification2(item.keyId, '最新价低于买开仓价减去止损价差，建议多头止损。');
+                }
+                if (item.highPrice === 0 || lastPrice >= item.highPrice) {
+                    item.highPrice = lastPrice;
+                }
+                if (item.OPENCOST + 2 * priceDifference <= item.highPrice &&
+                    item.isStrike === false) {
+                    item.isStrike = true; // 开始触发
+                    this.openNotification2(item.keyId, '买开仓后的最高价减去买开仓价格大于2倍价差，开始触发跟踪止损。');
+                }
+                if (item.highPrice - lastPrice >= priceDifference && item.isStrike === true) {
+                    item.isStart = true; // 回撤大于价差，启动跟踪止损
+                    this.openNotification2(item.keyId, '最新价小于最高价减价差，启动跟踪止损，建议多头止盈。');
+                }
+            } else if (item.DIRECTION === '2') {
+                if (lastPrice >= item.OPENCOST + priceDifference) { // 一直亏损，直接出场
+                    this.openNotification2(item.keyId, '最新价高于卖开仓价加上止损价差，建议空头止损。');
+                }
+                if (item.lowPrice === 0 || lastPrice <= item.lowPrice) {
+                    item.lowPrice = lastPrice;
+                }
+                if (item.OPENCOST - item.lowPrice >= 2 * priceDifference &&
+                    item.isStrike === false) {
+                    item.isStrike = true; // 开始触发
+                    this.openNotification2(item.keyId, '卖开仓价格与卖开仓后的最低价的差值大于2倍价差，开始触发跟踪止损。');
+                }
+                if (lastPrice >= item.lowPrice + priceDifference && item.isStrike === true) {
+                    item.isStart = true; // 回撤大于价差，启动跟踪止损
+                    this.openNotification2(item.keyId, '最新价大于最高价加价差，启动跟踪止损，建议空头止盈。');
+                }
+            }
+        });
+    }
 
     render() {
         const option = this.getOption();
@@ -766,6 +949,7 @@ export default class Lines extends React.Component {
             openCollapse: this.openCollapse,
             setStrategyTrue: this.setStrategyTrue,
             setStrategyFasle: this.setStrategyFasle,
+            openSetStopLoss: this.openSetStopLoss,
         };
 
         const parentMethods2 = {
@@ -777,13 +961,27 @@ export default class Lines extends React.Component {
             confirmOver: this.confirmOver,
         }
 
+        const parentMethods4 = {
+            mainDrawerClose: this.mainDrawerClose,
+            openChildrenDrawer1: this.openChildrenDrawer1,
+            childrenDrawerClose1: this.childrenDrawerClose1,
+            openChildrenDrawer2: this.openChildrenDrawer2,
+            childrenDrawerClose2: this.childrenDrawerClose2,
+            setStartLoss1: this.setStartLoss1,
+            setStartLoss2: this.setStartLoss2,
+            closeStopLoss1: this.closeStopLoss1,
+            closeStopLoss2: this.closeStopLoss2,
+        }
+
         const {
             kLine: { positionData, direction, profitClose, profit, overVisible, tempCurrentInterest,
                 strategyIsOpen, count, advisePrice, handNum, isOver, openOrClose, orderPrice,
                 mainContract, tickData },
         } = this.props;
 
-        const { isOpen, minPriceChange, orderVisible } = this.state;
+        const { isOpen, minPriceChange, orderVisible, lossVisible, childrenDrawer1,
+            childrenDrawer2, transCode, transType, stopLoss, stopProfit,
+            priceDifference, stopLossIsOpen1, stopLossIsOpen2 } = this.state;
 
         console.log('重新渲染了');
 
@@ -828,6 +1026,15 @@ export default class Lines extends React.Component {
                     <OverModal
                         {...parentMethods3}
                         modalVisible={overVisible} />
+                </div>
+                <div>
+                    <StopLossModal
+                        {...parentMethods4}
+                        modalVisible={lossVisible} childmodalVisible1={childrenDrawer1}
+                        childmodalVisible2={childrenDrawer2} transCode={transCode}
+                        transType={transType} stopLoss={stopLoss} stopProfit={stopProfit}
+                        priceDifference={priceDifference} stopLossIsOpen1={stopLossIsOpen1}
+                        minPriceChange={minPriceChange} stopLossIsOpen2={stopLossIsOpen2} />
                 </div>
             </div>
         )

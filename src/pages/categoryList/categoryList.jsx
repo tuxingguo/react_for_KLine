@@ -51,6 +51,7 @@ export default class PerformanceList extends Component {
                 HYCS: r.HYCS,
                 ZXDBJ: r.ZXDBJ,
                 BZJB: r.BZJB,
+                TRANSETYPE: r.TRANSETYPE,
             },
         });
     }

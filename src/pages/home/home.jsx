@@ -16,7 +16,7 @@ export default class Home extends Component {
     };
   }
 
-  componentDidMount() {
+  componentWillMount() {
     const { currentUser = {} } = this.props;
     const { dispatch } = this.props;
     dispatch({
@@ -33,7 +33,7 @@ export default class Home extends Component {
     const {
       home: { InitialInterest, bond, profitInPosition,
         profitInClosePosition, currentInterest, availableFund },
-  } = this.props;
+    } = this.props;
 
     return (
       <div>

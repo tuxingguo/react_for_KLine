@@ -830,7 +830,6 @@ export default class Lines extends React.Component {
     }
 
     setStartLoss1 = fieldsValue => {
-        // console.log('fieldsValue=', fieldsValue);
         const { stopLoss } = fieldsValue;
         const { stopProfit } = fieldsValue;
         this.setState({

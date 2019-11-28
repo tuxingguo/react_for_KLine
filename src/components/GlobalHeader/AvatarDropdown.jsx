@@ -18,11 +18,12 @@ class AvatarDropdown extends React.Component {
           type: 'login/logout',
         });
       }
+      this.props.user.currentUser = {};
 
       return;
     }
 
-    router.push(`/account/${key}`);
+    router.push(`/${key}`);
   };
 
   render() {
@@ -39,14 +40,14 @@ class AvatarDropdown extends React.Component {
 
     const menuHeaderDropdown = (
       <Menu className={styles.menu} selectedKeys={[]} onClick={this.onMenuClick}>
-        <Menu.Item key="center">
+        <Menu.Item key="myAccount">
           <Icon type="user" />
-          <FormattedMessage id="menu.account.center" defaultMessage="account center" />
+          <FormattedMessage id="menu.account" defaultMessage="account" />
         </Menu.Item>
-        <Menu.Item key="settings">
+        {/* <Menu.Item key="settings">
           <Icon type="setting" />
           <FormattedMessage id="menu.account.settings" defaultMessage="account settings" />
-        </Menu.Item>
+        </Menu.Item> */}
         <Menu.Divider />
         <Menu.Item key="logout">
           <Icon type="logout" />
@@ -75,4 +76,5 @@ class AvatarDropdown extends React.Component {
 
 export default connect(({ user }) => ({
   currentUser: user.currentUser,
+  user,
 }))(AvatarDropdown);

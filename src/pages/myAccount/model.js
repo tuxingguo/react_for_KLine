@@ -1,4 +1,4 @@
-import { checkUserName, updateMyInfo, getUserInfoById, updatePassword, updateMyFund } from './service';
+import { checkUserName, updateMyInfo, getUserInfoById, updatePassword, updateMyFund, confirmOldPassword } from './service';
 
 const Model = {
     namespace: 'myAccount',
@@ -8,6 +8,7 @@ const Model = {
         email: '',
         profile: '',
         password: '',
+        PwdStrength: '',
         availableFund: 0.00,
     },
     // effects： 处理所有的异步逻辑，将返回结果以Action的形式交给reducer处理
@@ -26,7 +27,7 @@ const Model = {
                 type: 'update',
                 payload: response,
             });
-            if (callback) callback();
+            return response;
         },
         *getUserInfo({ payload, callback }, { call, put }) {
             const response = yield call(getUserInfoById, payload);
@@ -58,6 +59,14 @@ const Model = {
                 callback(response); // 返回结果
             }
         },
+        *confirmOldPassword({ payload }, { call, put }) {
+            const response = yield call(confirmOldPassword, payload);
+            yield put({
+                type: 'checkPwd',
+                payload: response,
+            });
+            return response;
+        },
     },
     // reducers：将数据返回给页面
     reducers: {
@@ -80,6 +89,12 @@ const Model = {
                 profile: action.payload.profile,
                 password: action.payload.password,
                 availableFund: action.payload.availableFund,
+                PwdStrength: action.payload.PwdStrength,
+            };
+        },
+        checkPwd(state, { payload }) {
+            return {
+                ...state,
             };
         },
     },

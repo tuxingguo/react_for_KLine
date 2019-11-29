@@ -12,6 +12,7 @@ const FormItem = Form.Item;
 @connect(({ myAccount, user }) => ({
     myAccount,
     currentUser: user.currentUser,
+    user,
 }))
 
 @Form.create()
@@ -106,9 +107,17 @@ export default class MyAccount extends Component {
                     email,
                     profile,
                 },
+            }).then(resp => {
+                if (resp.status === 200) {
+                    message.success('修改成功');
+                } else {
+                    message.success('修改失败');
+                }
             });
             this.refreshAccountInfo();
-            message.success('修改成功');
+            dispatch({
+                type: 'user/fetchCurrent',
+            });
         });
     }
 
@@ -127,10 +136,14 @@ export default class MyAccount extends Component {
                 password: fieldsValue.password,
             },
             callback: res => {
+                if (res.status === 200) {
+                    message.success('密码修改成功');
+                } else {
+                    message.success('密码修改失败');
+                }
                 this.refreshAccountInfo();
             },
         });
-        message.success('密码修改成功');
     };
 
     cancelPass = () => {
@@ -140,6 +153,24 @@ export default class MyAccount extends Component {
             visible: false,
         });
     };
+
+    confirmOldPassword = (rule, value, callback) => {
+        const { dispatch } = this.props;
+        const { currentUser = {} } = this.props;
+        dispatch({
+            type: 'myAccount/confirmOldPassword',
+            payload: {
+                userId: currentUser.userId,
+                value,
+            },
+        }).then(res => {
+            if (res.pwd_bool === false) {
+                callback('原密码输入有误!');
+            } else {
+                callback();
+            }
+        });
+    }
 
     checkPassword = (rule, value, callback, form2) => {
         if (!value) {
@@ -188,21 +219,25 @@ export default class MyAccount extends Component {
                 fund,
             },
             callback: res => {
+                if (res.status === 200) {
+                    message.success('入金成功');
+                } else {
+                    message.success('入金失败');
+                }
                 this.refreshAccountInfo();
             },
         });
-        message.success('入金成功');
     }
 
     render() {
-        const { userName, email, profile, password, availableFund } = this.props.myAccount;
+        const { userName, email, profile, PwdStrength, availableFund } = this.props.myAccount;
         const { getFieldDecorator } = this.props.form;
         const data = [
             {
                 key: 1,
                 title: '账户密码',
                 description: '当前密码强度：',
-                result: password.length >= 10 ? '强' : '中',
+                result: PwdStrength === 'middle' ? '中' : '强',
             },
             {
                 key: 2,
@@ -216,6 +251,7 @@ export default class MyAccount extends Component {
             confirmPass: this.confirmPass,
             cancelPass: this.cancelPass,
             checkPassword: this.checkPassword,
+            confirmOldPassword: this.confirmOldPassword,
         };
 
         const parentMethods2 = {
@@ -322,7 +358,7 @@ export default class MyAccount extends Component {
                     />
                 </PageCard>
                 <PassModal {...parentMethods} modalVisible={passVisible} help={help}
-                    visible={visible} oldPassword={password} />
+                    visible={visible} PwdStrength={PwdStrength} />
                 <FundModal {...parentMethods2} modalVisible={fundVisible} />
             </div>
         );

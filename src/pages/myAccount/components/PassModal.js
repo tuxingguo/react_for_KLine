@@ -6,13 +6,13 @@ const FormItem = Form.Item;
 
 const PassModal = props => {
   const { modalVisible, form, confirmPass, cancelPass,
-    help, visible, checkPassword, oldPassword } = props;
+    help, visible, checkPassword, confirmOldPassword } = props;
   const handleOk = () => {
     if (form.getFieldValue('password') !== form.getFieldValue('confirm')) {
       message.error('密码输入不一致');
       return;
     }
-    form.validateFields((err, fieldsValue) => {
+    form.validateFieldsAndScroll((err, fieldsValue) => {
       if (err) return;
       confirmPass(fieldsValue);
       form.resetFields();
@@ -75,8 +75,8 @@ const PassModal = props => {
   };
 
   const checkOldPassword = (rule, value, callback) => {
-    if (value && value !== oldPassword) {
-      callback('原密码输入有误!');
+    if (value !== '' && value !== undefined && value !== null) {
+      confirmOldPassword(rule, value, callback);
     } else {
       callback();
     }
@@ -110,6 +110,7 @@ const PassModal = props => {
               validator: checkOldPassword,
             },
           ],
+          initialValue: '',
         })(<Input placeholder="请输入原密码" type="password" />)}
       </FormItem>
       <FormItem
@@ -141,6 +142,7 @@ const PassModal = props => {
               { required: true, message: '请输入密码！' },
               { validator: checkPassword1 },
             ],
+            initialValue: '',
           })(
             <Input type="password" placeholder="请设置登录密码" />,
           )}
@@ -165,6 +167,7 @@ const PassModal = props => {
               validator: checkConfirm,
             },
           ],
+          initialValue: '',
         })(<Input type="password" placeholder="请再次输入密码" />)}
       </FormItem>
     </Modal>

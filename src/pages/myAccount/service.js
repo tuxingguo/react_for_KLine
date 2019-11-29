@@ -34,3 +34,10 @@ export async function updateMyFund(value) {
         data: value,
     });
 }
+
+export async function confirmOldPassword(value) {
+    return request('/server/myAccount/checkOldPassword', {
+        method: 'POST',
+        data: value,
+    });
+}

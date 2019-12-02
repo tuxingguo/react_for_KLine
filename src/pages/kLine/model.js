@@ -15,7 +15,6 @@ const Model = {
     advisePrice: 0,
     profitClose: 0,
     profit: 0,
-    overVisible: false,
     orderPrice: 0,
     fields: [],
 
@@ -87,7 +86,6 @@ const Model = {
         lastTick: lt,
         tickData: action.payload.json_list,
         isOver: action.payload.isOver,
-        overVisible: action.payload.isOver === true,
         advisePrice: lt[2],
         mainContract: action.payload.mainContract,
         tradingDay: action.payload.tradingDay,

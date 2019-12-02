@@ -49,6 +49,8 @@ export default class Lines extends React.Component {
             priceDifference: ZXDBJ * 10,
             stopLossIsOpen1: false,
             stopLossIsOpen2: false,
+            rateLevel: 0,
+            overVisible: false,
         };
     }
 
@@ -88,7 +90,6 @@ export default class Lines extends React.Component {
         this.props.kLine.advisePrice = 0;
         this.props.kLine.profitClose = 0;
         this.props.kLine.profit = 0;
-        this.props.kLine.overVisible = false;
         this.props.kLine.orderPrice = 0;
         this.props.kLine.tempProfitClose = 0;
         this.props.kLine.fields = [];
@@ -113,7 +114,6 @@ export default class Lines extends React.Component {
     getOption = () => {
         // 数据意义：开盘(open)，收盘(close)，最低(lowest)，最高(highest) 成交量(volume)
         function splitData(rawData) {
-            console.log('执行了');
             const categoryData = [];
             const values = [];
             const volumes = [];
@@ -391,7 +391,6 @@ export default class Lines extends React.Component {
         });
     }
 
-    // 模态框点击下单确认
     confirmOrder = () => {
         this.setState({ // 触发渲染
             orderVisible: false,
@@ -399,7 +398,6 @@ export default class Lines extends React.Component {
         this.orderProcess(this.props.kLine.fields);
     }
 
-    // 模态框点击取消
     cancelOrder = () => {
         this.setState({ // 触发渲染
             orderVisible: false,
@@ -408,12 +406,8 @@ export default class Lines extends React.Component {
 
     // 开始下单
     orderProcess = fields => {
-        console.log('合约乘数=', this.state.transUnit);
         const tempNextTick = this.props.kLine.nextTick;
-        // fields.price = fields.price > tempNextTick[4] ? tempNextTick[4]
-        // : fields.price; // 考虑下如何实现
 
-        // 将处理逻辑放在了前端，更加方便
         if (fields.openOrClose === '1') { // 开仓
             let profit = 0;
             if (fields.direction === '1') { // 买
@@ -455,6 +449,13 @@ export default class Lines extends React.Component {
                 }
                 if (this.state.stopLossIsOpen2 === true) { // 表示开启了"跟踪止损"
                     this.calculateStopLoss2();
+                }
+                if (res.isOver === true) {
+                    const rateLevel = this.calculateRate();
+                    this.setState({
+                        rateLevel,
+                        overVisible: true,
+                    });
                 }
             },
         });
@@ -511,6 +512,13 @@ export default class Lines extends React.Component {
                 }
                 if (this.state.stopLossIsOpen2 === true) { // 表示开启了"跟踪止损"
                     this.calculateStopLoss2();
+                }
+                if (res.isOver === true) {
+                    const rateLevel = this.calculateRate();
+                    this.setState({
+                        rateLevel,
+                        overVisible: true,
+                    });
                 }
             },
         });
@@ -661,9 +669,8 @@ export default class Lines extends React.Component {
     }
 
     confirmOver = () => {
-        this.props.kLine.overVisible = false;
-        this.setState({ // 触发渲染
-            tempNum: 0,
+        this.setState({
+            overVisible: false,
         });
     }
 
@@ -698,83 +705,51 @@ export default class Lines extends React.Component {
         const lastSecDataMA5 = Number(option.series[2].data[len - 2]);
         const lastSecDataMA30 = Number(option.series[5].data[len - 2]); // 倒数第二根MA
 
-        let goldOrDie = 0;
         let duotouFlag = false;
         let kongtouFlag = false;
 
-        if (lastSecDataMA30 < lastSecDataMA5 && lastDataMA30 >= lastDataMA5) { // 死叉，均线下穿
-            // 平多仓 开空仓
-            // 检查仓位情况，是否存在多头持仓
-            goldOrDie = 1;
-            this.props.kLine.positionData.map(item => {
+        if (lastSecDataMA30 < lastSecDataMA5 && lastDataMA30 >= lastDataMA5) { // 死叉，均线下穿 平多仓 开空仓
+            this.props.kLine.positionData.map(item => { // 检查仓位情况，是否存在多头持仓
                 if (item.DIRECTION === '1') {
                     duotouFlag = true; // 存在
                 }
             });
-            this.openNotification(goldOrDie, duotouFlag)
+            if (duotouFlag === true) {
+                this.openNotification('短期均线由上向下穿越长期均线，宜开空仓；检测到目前持有多头仓位，宜平多仓。')
+            } else {
+                this.openNotification('短期均线由上向下穿越长期均线，宜开空仓。')
+            }
         }
-        if (lastSecDataMA5 < lastSecDataMA30 && lastDataMA5 >= lastDataMA30) { // 金叉，均线上传
-            // 平空仓 开多仓
-            // 检查仓位情况，是否存在空头持仓
-            goldOrDie = 2;
-            this.props.kLine.positionData.map(item => {
+        if (lastSecDataMA5 < lastSecDataMA30 && lastDataMA5 >= lastDataMA30) { // 金叉，均线上传 平空仓 开多仓
+            this.props.kLine.positionData.map(item => { // 检查仓位情况，是否存在空头持仓
                 if (item.DIRECTION === '2') {
                     kongtouFlag = true; // 存在
                 }
             });
-            this.openNotification(goldOrDie, kongtouFlag)
+            if (kongtouFlag === true) {
+                this.openNotification('短期均线由下向上穿越长期均线，宜开多仓；检测到目前持有空头仓位，宜平空仓。')
+            } else {
+                this.openNotification('短期均线由下向上穿越长期均线，宜开多仓。')
+            }
         }
     }
 
-    openNotification = (goldOrDie, flag) => {
+    openNotification = msg => {
         const key = `open${Date.now()}`;
         const btn = (
             <Button type="primary" size="small" onClick={() => notification.close(key)}>
                 知道了
           </Button>
         );
-        if (goldOrDie === 1 && flag === false) { // 死叉
-            notification.open({
-                message: '策略提示',
-                description:
-                    '短期均线由上向下穿越长期均线，宜开空仓。',
-                icon: <Icon type="smile" style={{ color: '#108ee9' }} />,
-                btn,
-                key,
-                duration: 0,
-            });
-        } else if (goldOrDie === 1 && flag === true) {
-            notification.open({
-                message: '策略提示',
-                description:
-                    '短期均线由上向下穿越长期均线，宜开空仓；检测到目前持有多头仓位，宜平多仓。',
-                icon: <Icon type="smile" style={{ color: '#108ee9' }} />,
-                btn,
-                key,
-                duration: 0,
-            });
-        }
-        if (goldOrDie === 2 && flag === false) { // 金叉
-            notification.open({
-                message: '策略提示',
-                description:
-                    '短期均线由下向上穿越长期均线，宜开多仓。',
-                icon: <Icon type="smile" style={{ color: '#108ee9' }} />,
-                btn,
-                key,
-                duration: 0,
-            });
-        } else if (goldOrDie === 2 && flag === true) {
-            notification.open({
-                message: '策略提示',
-                description:
-                    '短期均线由下向上穿越长期均线，宜开多仓；检测到目前持有空头仓位，宜平空仓。',
-                icon: <Icon type="smile" style={{ color: '#108ee9' }} />,
-                btn,
-                key,
-                duration: 0,
-            });
-        }
+        notification.open({
+            message: '策略提示',
+            description:
+                msg,
+            icon: <Icon type="smile" style={{ color: '#108ee9' }} />,
+            btn,
+            key,
+            duration: 0,
+        });
     };
 
     openSetStopLoss = () => {
@@ -855,10 +830,8 @@ export default class Lines extends React.Component {
 
     calculateStopLoss1 = () => {
         const lastPrice = this.props.kLine.advisePrice; // 获得当前最新价
-        // console.log('lastPrice=', lastPrice);
         const { stopLoss, stopProfit } = this.state; // 获得止盈止损价差
         this.props.kLine.positionData.map(item => {
-            // console.log('item=', item);
             if (item.DIRECTION === '1') {
                 if (lastPrice <= item.OPENCOST - stopLoss) { // 最新价低于买开仓价10个最小变动价位，多头止损
                     this.openNotification2(item.keyId, '最新价低于买开仓价减去止损价差，建议多头止损。');
@@ -878,9 +851,7 @@ export default class Lines extends React.Component {
     openNotification2 = (posIndex, msg) => {
         const key = `open${Date.now()}`;
         const btn = (
-            <Button type="primary" size="small" onClick={() => notification.close(key)}>
-                知道了
-          </Button>
+            <Button type="primary" size="small" onClick={() => notification.close(key)}>知道了</Button>
         );
         notification.open({
             message: '止损/止盈提示',
@@ -933,6 +904,26 @@ export default class Lines extends React.Component {
         });
     }
 
+    calculateRate = () => {
+        const { profit, profitClose } = this.props.kLine;
+        const { transUnit, minPriceChange } = this.state;
+        const profitAndLOss = profitClose + profit; // 得到单次测试的总盈亏
+        const step = profitAndLOss / (transUnit * minPriceChange);
+        let rateLevel = 0;
+        if (profitAndLOss < 0) {
+            rateLevel = 1;
+        } else if (step <= 5) {
+            rateLevel = 2;
+        } else if (step <= 10) {
+            rateLevel = 3;
+        } else if (step <= 20) {
+            rateLevel = 4;
+        } else {
+            rateLevel = 5;
+        }
+        return rateLevel;
+    }
+
     render() {
         const option = this.getOption();
         this.props.kLine.option = option;
@@ -973,14 +964,14 @@ export default class Lines extends React.Component {
         }
 
         const {
-            kLine: { positionData, direction, profitClose, profit, overVisible, tempCurrentInterest,
+            kLine: { positionData, direction, profitClose, profit, tempCurrentInterest,
                 strategyIsOpen, count, advisePrice, handNum, isOver, openOrClose, orderPrice,
                 mainContract, tickData },
         } = this.props;
 
         const { isOpen, minPriceChange, orderVisible, lossVisible, childrenDrawer1,
-            childrenDrawer2, transCode, transType, stopLoss, stopProfit,
-            priceDifference, stopLossIsOpen1, stopLossIsOpen2 } = this.state;
+            childrenDrawer2, transCode, transType, stopLoss, stopProfit, overVisible,
+            priceDifference, stopLossIsOpen1, stopLossIsOpen2, rateLevel } = this.state;
 
         console.log('重新渲染了');
 
@@ -1024,7 +1015,8 @@ export default class Lines extends React.Component {
                 <div>
                     <OverModal
                         {...parentMethods3}
-                        modalVisible={overVisible} />
+                        modalVisible={overVisible}
+                        rateLevel={rateLevel} />
                 </div>
                 <div>
                     <StopLossModal

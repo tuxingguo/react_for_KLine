@@ -203,7 +203,7 @@ const CreateForm = props => {
                     })(
                       <InputNumber
                         min={0}
-                        max={10000}
+                        max={100000}
                         step={minPriceChange}
                         precision={1}
                         style={{ width: '80%' }}

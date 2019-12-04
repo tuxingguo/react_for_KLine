@@ -13,9 +13,10 @@ const actions = (
         <FormattedMessage id="user-register-result.register-result.view-mailbox" />
       </Button> */}
     </a>
-    <Link to="/">
+    <Link to="/user/login">
       <Button size="large" type="primary">
-        <FormattedMessage id="user-register-result.register-result.back-home" />
+        {/* <FormattedMessage id="user-register-result.register-result.back-home" /> */}
+        返回登录页
       </Button>
     </Link>
   </div>

@@ -187,6 +187,8 @@ const CreateForm = props => {
                       initialValue: handNum,
                     })(
                       <InputNumber min={1} max={1000} style={{ width: '80%' }}
+                      step={1}
+                      precision={0}
                       />,
                     )}
                   </FormItem>

@@ -327,6 +327,7 @@ export default class MyAccount extends Component {
                                         <Input.TextArea
                                             placeholder="介绍下自己吧~"
                                             rows={4}
+                                            maxlength="400"
                                         />,
                                     )}
                                 </FormItem>

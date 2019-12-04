@@ -2,7 +2,7 @@ import request from '@/utils/request';
 import { UserRegisterParams } from './index';
 
 export async function register(params: UserRegisterParams) {
-  console.log('params=', params);
+  // console.log('params=', params);
   return request('/server/register', {
     method: 'POST',
     data: params,

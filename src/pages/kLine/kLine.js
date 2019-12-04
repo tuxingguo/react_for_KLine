@@ -984,7 +984,8 @@ export default class Lines extends React.Component {
                         showLoading={tickData.length === 0}
                         option={option}
                         theme="Imooc"
-                        style={{ height: isOpen === false ? '540px' : '300px' }} />
+                        style={{ height: isOpen === false ? '530px' : '300px' }}
+                        />
                 </PageHeader>
                 <CreateForm
                     {...parentMethods}

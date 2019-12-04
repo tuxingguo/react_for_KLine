@@ -10,7 +10,6 @@ import { FormDataType } from './index';
 // }
 
 export async function accountLogin(params: FormDataType) {
-  console.log('params=', params);
   return request('/server/login/account', {
     method: 'POST',
     data: params,

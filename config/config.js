@@ -107,18 +107,14 @@ export default {
               name: 'home',
               icon: 'home',
               component: './home/home',
+              authority: ['admin', 'user'],
             },
-            // {
-            //   name: 'book',
-            //   icon: 'book',
-            //   path: '/book',
-            //   component: './book/book',
-            // },
             {
               name: 'categoryList',
               icon: 'unordered-list',
               path: '/categoryList',
               component: './categoryList/categoryList',
+              authority: ['admin', 'user'],
             },
             {
               name: 'kLine',
@@ -126,12 +122,14 @@ export default {
               path: '/categoryList/kLine',
               component: './kLine/kLine',
               hideInMenu: true,
+              authority: ['admin', 'user'],
             },
             {
               name: 'account',
               icon: 'user',
               path: '/myAccount',
               component: './myAccount/myAccount',
+              authority: ['admin', 'user'],
             },
 
             {
@@ -139,23 +137,6 @@ export default {
               redirect: '/home',
               authority: ['admin', 'user'],
             },
-            // {
-            //   name: 'account',
-            //   icon: 'user',
-            //   path: '/account',
-            //   routes: [
-            //     {
-            //       name: 'center',
-            //       path: '/account/center',
-            //       component: './account/center',
-            //     },
-            //     {
-            //       name: 'settings',
-            //       path: '/account/settings',
-            //       component: './account/settings',
-            //     },
-            //   ],
-            // },
             {
               component: '404',
             },

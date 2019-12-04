@@ -80,8 +80,8 @@ export interface UserRegisterParams {
   }),
 )
 class Register extends Component<
-  RegisterProps,
-  RegisterState
+RegisterProps,
+RegisterState
 > {
   state: RegisterState = {
     count: 0,
@@ -93,19 +93,19 @@ class Register extends Component<
 
   interval: number | undefined = undefined;
 
-  componentDidUpdate() {
-    const { userRegister, form } = this.props;
-    const account = form.getFieldValue('email');
-    if (userRegister.status === 'ok') {
-      message.success('注册成功！');
-      router.push({
-        pathname: '/user/register-result',
-        state: {
-          account,
-        },
-      });
-    }
-  }
+  // componentDidUpdate() {
+  //   const { userRegister, form } = this.props;
+  //   const account = form.getFieldValue('userName');
+  //   if (userRegister.status === 'ok') {
+  //     message.success('注册成功！');
+  //     router.push({
+  //       pathname: '/user/register-result',
+  //       state: {
+  //         account,
+  //       },
+  //     });
+  //   }
+  // }
 
   componentWillUnmount() {
     clearInterval(this.interval);
@@ -147,6 +147,20 @@ class Register extends Component<
             ...values,
             prefix,
           },
+        }).then(resp => {
+          if (resp.status === 'ok') {
+            const { userRegister, form } = this.props;
+            const account = form.getFieldValue('userName');
+            if (userRegister.status === 'ok') {
+              message.success('注册成功！');
+              router.push({
+                pathname: '/user/register-result',
+                state: {
+                  account,
+                },
+              });
+            }
+          }
         });
       }
     });
@@ -215,20 +229,21 @@ class Register extends Component<
 
   handleUserName = (rule: any, value: string, callback: (messgae?: string) => void) => {
     const { dispatch } = this.props;
-    if (value !== null && value !== ''){
+    if (value !== null && value !== '' && value !== undefined) {
       dispatch({
         type: 'userRegister/checkUserName',
         payload: {
           value,
         },
-      }).then( resp => {
-        console.log('resp', resp.userNameMsg);
+      }).then(resp => {
         if (resp.userNameMsg === 'illegal') {
           callback(formatMessage({ id: 'user-register.userName.employ' }));
         } else {
           callback();
         }
       });
+    } else {
+      callback();
     }
   };
 
@@ -253,7 +268,7 @@ class Register extends Component<
                   validator: this.handleUserName,
                 },
               ],
-              
+
             })(
               <Input
                 size="large"

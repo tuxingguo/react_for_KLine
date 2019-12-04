@@ -9,12 +9,12 @@ import styles from './style.less';
 const actions = (
   <div className={styles.actions}>
     <a href="">
-      <Button size="large" type="primary">
+      {/* <Button size="large" type="primary">
         <FormattedMessage id="user-register-result.register-result.view-mailbox" />
-      </Button>
+      </Button> */}
     </a>
     <Link to="/">
-      <Button size="large">
+      <Button size="large" type="primary">
         <FormattedMessage id="user-register-result.register-result.back-home" />
       </Button>
     </Link>
@@ -29,11 +29,12 @@ const RegisterResult: React.FC<RouteChildrenProps> = ({ location }) => (
       <div className={styles.title}>
         <FormattedMessage
           id="user-register-result.register-result.msg"
-          values={{ email: location.state ? location.state.account : 'AntDesign@example.com' }}
+          values={{ email: location.state ? location.state.account : '' }}
         />
       </div>
     }
-    subTitle={formatMessage({ id: 'user-register-result.register-result.activation-email' })}
+    // subTitle={formatMessage({ id: 'user-register-result.register-result.activation-email' })}
+    subTitle={'您已经成功注册该系统，赶紧使用起来吧，期货大家庭期待你的加入！'}
     extra={actions}
   />
 );

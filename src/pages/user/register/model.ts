@@ -40,6 +40,7 @@ const Model: ModelType = {
         type: 'registerHandle',
         payload: response,
       });
+      return response;
     },
     *checkUserName({ payload }, { call, put }) {
       const response = yield call(checkUserName, payload);

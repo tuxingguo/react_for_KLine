@@ -13,7 +13,7 @@ const CreateForm = props => {
   const { handleOrder, handleWatchOn, handRestart, positionData, getDefaultVlaue,
     advisePrice, currentInterest, handNum, isOver, profit, profitClose, count, direction,
     openOrClose, minPriceChange, openCollapse, strategyIsOpen, setStrategyTrue,
-    setStrategyFasle, openSetStopLoss } = props;
+    setStrategyFasle, openSetStopLoss, availableFund, bond } = props;
 
   const okHandle = () => {
     form.validateFieldsAndScroll((err, fieldsValue) => {
@@ -132,12 +132,16 @@ const CreateForm = props => {
         ),
     }];
 
+  const gridStyle = {
+    width: '30%',
+    textAlign: 'center',
+  };
 
   return (
     <Collapse style={{ margin: '1%' }} onChange={callback} >
       <Panel header="打开交易面板" style={{ fontSize: '13px' }}>
         <Progress percent={count * 10} status="active" />
-        <div style={{ float: 'left', width: '100%', height: '290px' }}>
+        <div style={{ float: 'left', width: '100%', height: '300px' }}>
           <div style={{ width: '40%', float: 'left' }}>
             <Form>
               <Row gutter={8}>
@@ -187,8 +191,8 @@ const CreateForm = props => {
                       initialValue: handNum,
                     })(
                       <InputNumber min={1} max={1000} style={{ width: '80%' }}
-                      step={1}
-                      precision={0}
+                        step={1}
+                        precision={0}
                       />,
                     )}
                   </FormItem>
@@ -264,91 +268,112 @@ const CreateForm = props => {
               </div>
             </Form>
           </div>
-          <div style={{ width: '55%', float: 'left' }}>
-            <div>
-              <Row gutter={12} style={{ marginBottom: '3%' }}>
-                <Col span={8}>
-                  <Card>
+          <div style={{ width: '55%', float: 'left', height: '100%' }}>
+            <div style={{ height: '50%' }}>
+              <Card style={{ background: '#fafafa' }}>
+                <Row gutter={12} style={{ marginBottom: 10, marginTop: -5 }}>
+                  <div>
+                    <Col span={8} style={{ borderRight: '1px solid #1890ff', textAlign: 'center' }}>
+                      <Statistic
+                        title="资产账号"
+                        value="800009022"
+                        valueStyle={{ color: '#cf1322', fontSize: '16px' }}
+                      />
+                    </Col>
+                  </div>
+                  <Col span={8} style={{ borderRight: '1px solid #1890ff', textAlign: 'center' }}>
                     <Statistic
                       title="当前权益"
                       value={currentInterest}
                       precision={2}
-                      valueStyle={{ color: '#cf1322' }}
+                      valueStyle={{ color: '#cf1322', fontSize: '16px' }} // 不变
                       suffix=" 元"
                     />
-                  </Card>
-                </Col>
-                {
-                  profit >= 0 &&
-                  (
-                    <Col span={8}>
-                      <Card>
+                  </Col>
+                  <Col span={8} style={{ textAlign: 'center' }}>
+                    <Statistic
+                      title="可用资金"
+                      value={availableFund}
+                      precision={2}
+                      valueStyle={{ color: '#cf1322', fontSize: '16px' }}
+                      suffix=" 元"
+                    />
+                  </Col>
+                </Row>
+                <Row gutter={12}>
+                  <Col span={8} style={{ borderRight: '1px solid #1890ff', textAlign: 'center' }}>
+                    <Statistic
+                      title="保证金"
+                      value={bond}
+                      precision={2}
+                      valueStyle={{ color: '#cf1322', fontSize: '16px' }}
+                      suffix=" 元"
+                    />
+                  </Col>
+                  {
+                    profit >= 0 &&
+                    (
+                      <Col span={8} style={{ borderRight: '1px solid #1890ff', textAlign: 'center' }}>
                         <Statistic
                           title="浮动盈亏"
                           value={profit}
                           precision={2}
-                          valueStyle={{ color: '#cf1322' }}
+                          valueStyle={{ color: '#cf1322', fontSize: '16px' }}
                           prefix={<Icon type="arrow-up" />}
                           suffix=" 元"
                         />
-                      </Card>
-                    </Col>
-                  )
-                }
-                {
-                  profit < 0 &&
-                  (
-                    <Col span={8}>
-                      <Card>
+                      </Col>
+                    )
+                  }
+                  {
+                    profit < 0 &&
+                    (
+                      <Col span={8} style={{ borderRight: '1px solid #1890ff', textAlign: 'center' }}>
                         <Statistic
                           title="浮动盈亏"
                           value={profit}
                           precision={2}
-                          valueStyle={{ color: '#3f8600' }}
+                          valueStyle={{ color: '#3f8600', fontSize: '16px' }}
                           prefix={<Icon type="arrow-down" />}
                           suffix=" 元"
                         />
-                      </Card>
-                    </Col>
-                  )
-                }
-                {
-                  profitClose >= 0 &&
-                  (
-                    <Col span={8}>
-                      <Card>
+                      </Col>
+                    )
+                  }
+                  {
+                    profitClose >= 0 &&
+                    (
+                      <Col span={8} style={{ textAlign: 'center' }}>
                         <Statistic
                           title="平仓盈亏"
                           value={profitClose}
                           precision={2}
-                          valueStyle={{ color: '#cf1322' }}
+                          valueStyle={{ color: '#cf1322', fontSize: '16px' }}
                           prefix={<Icon type="arrow-up" />}
                           suffix=" 元"
                         />
-                      </Card>
-                    </Col>
-                  )
-                }
-                {
-                  profitClose < 0 &&
-                  (
-                    <Col span={8}>
-                      <Card>
+                      </Col>
+                    )
+                  }
+                  {
+                    profitClose < 0 &&
+                    (
+                      <Col span={8} style={{ textAlign: 'center' }}>
                         <Statistic
                           title="平仓盈亏"
                           value={profitClose}
                           precision={2}
-                          valueStyle={{ color: '#3f8600' }}
+                          valueStyle={{ color: '#3f8600', fontSize: '16px' }}
                           prefix={<Icon type="arrow-down" />}
                           suffix=" 元"
                         />
-                      </Card>
-                    </Col>
-                  )
-                }
-              </Row>
+                      </Col>
+                    )
+                  }
+                </Row>
+              </Card>
             </div>
-            <div>
+            <div style={{ marginTop: 5 }}>
               <Table
                 size="small"
                 columns={columns}

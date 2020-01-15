@@ -4,6 +4,7 @@ import { Button, Form, Icon, Input, Table } from 'antd';
 import router from 'umi/router';
 import PageCard from '../../components/PageCard';
 import { BASE_PAGINATION } from '../../layout';
+import CycleOption from './components/CycleOption'
 
 const FormItem = Form.Item;
 
@@ -20,6 +21,9 @@ export default class PerformanceList extends Component {
             pagination: { current: 1, ...BASE_PAGINATION },
             sorter: { field: '', order: '' },
             searchKey: '',
+            cycleVisible: false,
+            cycle: 1,
+            rData: null,
         };
     }
 
@@ -43,6 +47,45 @@ export default class PerformanceList extends Component {
         this.fetch();
     }
 
+    showCycle = r => {
+        this.setState({
+            rData: r,
+            cycleVisible: true, // 重新渲染
+        });
+    }
+
+    handleSearchKeyChange = e => {
+        this.setState({
+            searchKey: e.target.value,
+        });
+    }
+
+    handleSearch = () => {
+        this.state.pagination.current = 1;
+        this.fetch();
+    }
+
+    confirmCycle = () => {
+        this.setState({
+            cycleVisible: false,
+        });
+        const rData = this.state;
+        this.handleTrain(rData.rData);
+    }
+
+    cancelCycle = () => {
+        this.setState({
+            cycleVisible: false,
+        });
+    }
+
+    shiftCycle = op => {
+        const a = op.target.value
+        this.setState({
+            cycle: a,
+        });
+    }
+
     handleTrain = r => {
         router.push({
             pathname: '/categoryList/kLine',
@@ -52,20 +95,10 @@ export default class PerformanceList extends Component {
                 ZXDBJ: r.ZXDBJ,
                 BZJB: r.BZJB,
                 TRANSETYPE: r.TRANSETYPE,
+                CYCLE: this.state.cycle,
             },
         });
     }
-
-    handleSearchKeyChange = e => {
-        this.setState({
-            searchKey: e.target.value,
-        });
-      }
-
-    handleSearch() {
-        this.state.pagination.current = 1;
-        this.fetch();
-      }
 
     render() {
         const {
@@ -73,7 +106,7 @@ export default class PerformanceList extends Component {
         } = this.props;
 
         const actions = r => (
-            <a onClick={() => this.handleTrain(r)}>训练</a>
+            <a onClick={() => this.showCycle(r)}>训练</a>
         );
 
         const columns = [
@@ -116,6 +149,13 @@ export default class PerformanceList extends Component {
                     ),
             }];
 
+        const parentMethods = {
+            confirmCycle: this.confirmCycle,
+            cancelCycle: this.cancelCycle,
+            shiftCycle: this.shiftCycle,
+        }
+
+        const { cycleVisible, cycle } = this.state;
         return (
             <PageCard title="品种列表">
                 <div style={{ marginBottom: 24 }}>
@@ -147,6 +187,13 @@ export default class PerformanceList extends Component {
                     onChange={this.handleTableChange}
                     bordered={false}
                 />
+                <div>
+                    <CycleOption
+                        {...parentMethods}
+                        modalVisible={cycleVisible}
+                        cycle={cycle}
+                    />
+                </div>
             </PageCard>
         );
     }

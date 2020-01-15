@@ -31,3 +31,17 @@ export async function getUserInfoById(params) {
     data: { ...params, method: 'post' },
   });
 }
+
+export async function saveOrder(params) {
+  return request('/server/order/saveOrder', {
+    method: 'POST',
+    data: { ...params },
+  });
+}
+
+export async function trainRecord(params) {
+  return request('/server/order/trainRecord', {
+    method: 'POST',
+    data: { ...params },
+  });
+}

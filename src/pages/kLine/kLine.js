@@ -31,6 +31,7 @@ export default class Lines extends React.Component {
         const { HYCS } = state;
         const { ZXDBJ } = state;
         const { BZJB } = state;
+        const { CYCLE } = state;
         this.state = {
             ...super.state,
             tempNum: 0,
@@ -70,6 +71,7 @@ export default class Lines extends React.Component {
                 transCode: this.state.transCode,
             },
         });
+        this.props.kLine.trainId = '80000902220200115142930' // 初始化训练Id
     }
 
     // 组件即将销毁
@@ -92,8 +94,12 @@ export default class Lines extends React.Component {
         this.props.kLine.profit = 0;
         this.props.kLine.orderPrice = 0;
         this.props.kLine.tempProfitClose = 0;
+        this.props.kLine.bond = 0;
         this.props.kLine.fields = [];
         this.props.kLine.strategyIsOpen = false;
+        this.props.kLine.currentInterest = 1000000;
+        this.props.kLine.tempCurrentInterest = 1000000;
+        this.props.kLine.availableFund = 1000000;
     }
 
     handRestart = () => {
@@ -452,6 +458,7 @@ export default class Lines extends React.Component {
                 }
                 if (res.isOver === true) {
                     const rateLevel = this.calculateRate();
+                    this.trainRecord();
                     this.setState({
                         rateLevel,
                         overVisible: true,
@@ -463,29 +470,39 @@ export default class Lines extends React.Component {
         // 下单成功，这里开始计算该客户的盈亏情况
         let tempBond = 0;
         this.props.kLine.profit = 0;
+        this.props.kLine.bond = 0;
         this.props.kLine.positionData.map(item => {
             tempBond += item.BOND; // 保证金
+            this.props.kLine.bond += item.BOND;
             this.props.kLine.profit += item.PROFITINPOSIOTION; //  浮动盈亏
         });
 
         this.props.kLine.tempCurrentInterest = this.props.kLine.currentInterest +
             this.props.kLine.profit + this.props.kLine.profitClose;
 
-        const availableFund = this.props.kLine.availableFund - tempBond
+        const availableFund = this.props.kLine.availableFundFix - tempBond
             + this.props.kLine.profitClose;
 
+        this.props.kLine.availableFund = availableFund;
         const { currentUser = {} } = this.props;
         dispatch({
-            type: 'kLine/calculateProfit',
+            type: 'kLine/saveOrder',
             payload: {
                 userId: currentUser.userId,
-                profitInPosition: this.props.kLine.profit, // 浮动盈亏
-                profitInClosePosition: this.props.kLine.tempProfitClose, // 平仓盈亏
+                trainId: this.props.kLine.trainId,
+                action: 'order', // 1 代表下单，2 代表观望
+                instrumentId: this.props.kLine.mainContract,
+                direction: fields.direction === '1' ? 'buy' : 'sell',
+                openOrClose: fields.openOrClose === '1' ? 'open' : 'close',
+                handNum: fields.num,
                 bond: tempBond, // 保证金
-                currentInterest: this.props.kLine.tempCurrentInterest,
-                availableFund,
+                profitInPosition: this.props.kLine.profit, // 浮动盈亏
+                profitInClosePosition: this.props.kLine.profitClose, // 平仓盈亏
+                currentInterest: this.props.kLine.tempCurrentInterest, // 当前权益
+                availableFund, // 可用资金
             },
         });
+        console.log('profitClose=', this.props.kLine.profitClose);
     }
 
     // 观望
@@ -515,6 +532,7 @@ export default class Lines extends React.Component {
                 }
                 if (res.isOver === true) {
                     const rateLevel = this.calculateRate();
+                    this.trainRecord();
                     this.setState({
                         rateLevel,
                         overVisible: true,
@@ -543,13 +561,18 @@ export default class Lines extends React.Component {
         this.props.kLine.tempCurrentInterest = this.props.kLine.currentInterest +
             this.props.kLine.profit + this.props.kLine.profitClose;
         dispatch({
-            type: 'kLine/calculateProfit',
+            type: 'kLine/saveOrder',
             payload: {
                 userId: currentUser.userId,
+                trainId: this.props.kLine.trainId,
+                action: 'watch',
+                instrumentId: this.props.kLine.mainContract,
                 profitInPosition: this.props.kLine.profit, // 浮动盈亏
+                profitInClosePosition: this.props.kLine.profitClose, // 平仓盈亏
                 currentInterest: this.props.kLine.tempCurrentInterest, // 当前权益
             },
         });
+        console.log('profitClose=', this.props.kLine.profitClose);
     }
 
     // 持仓函数
@@ -924,6 +947,27 @@ export default class Lines extends React.Component {
         return rateLevel;
     }
 
+    trainRecord = () => {
+        const { dispatch } = this.props;
+        const { currentUser = {} } = this.props;
+        dispatch({
+            type: 'kLine/trainRecord',
+            payload: {
+                trainId: this.props.kLine.trainId,
+                userId: currentUser.userId,
+                transCode: this.state.transCode,
+                bond: this.props.kLine.bond,
+                profitInPosition: this.props.kLine.profit,
+                profitInClosePosition: this.props.kLine.profitClose,
+                currentInterest: this.props.kLine.tempCurrentInterest,
+                availableFund: this.props.kLine.availableFund,
+                rateOfRetracement: 0,
+                rateOfReturn: 0,
+                trainOverTime: moment().format('YYYY-MM-DD HH:mm:ss'),
+            },
+        });
+    }
+
     render() {
         const option = this.getOption();
         this.props.kLine.option = option;
@@ -966,7 +1010,7 @@ export default class Lines extends React.Component {
         const {
             kLine: { positionData, direction, profitClose, profit, tempCurrentInterest,
                 strategyIsOpen, count, advisePrice, handNum, isOver, openOrClose, orderPrice,
-                mainContract, tickData },
+                mainContract, tickData, availableFund, bond },
         } = this.props;
 
         const { isOpen, minPriceChange, orderVisible, lossVisible, childrenDrawer1,
@@ -998,7 +1042,9 @@ export default class Lines extends React.Component {
                     openOrClose={openOrClose} // 开平
                     profitClose={profitClose} // 平仓权益
                     profit={profit} // 持仓权益
-                    currentInterest={tempCurrentInterest}
+                    currentInterest={tempCurrentInterest} // 当前权益
+                    bond={bond}
+                    availableFund={availableFund}
                     minPriceChange={minPriceChange}
                     strategyIsOpen={strategyIsOpen}
 

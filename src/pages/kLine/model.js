@@ -1,4 +1,5 @@
-import { queryNextTick1MinData, calculateProfit, getUserInfoById, queryOriginTickData } from './service';
+import { queryNextTick1MinData, calculateProfit, getUserInfoById,
+  queryOriginTickData, saveOrder, trainRecord } from './service';
 
 const Model = {
   namespace: 'kLine',
@@ -18,10 +19,12 @@ const Model = {
     orderPrice: 0,
     fields: [],
 
-    currentInterest: 0,
-    availableFund: 0,
+    currentInterest: 1000000, // 期初设置为100,0000
+    availableFund: 1000000, // 期初设置为100,0000
+    availableFundFix: 1000000,
     tempProfitClose: 0,
-    tempCurrentInterest: 0,
+    tempCurrentInterest: 1000000,
+    bond: 0,
 
     start: 0,
     end: 0,
@@ -30,6 +33,7 @@ const Model = {
 
     strategyIsOpen: false, // 默认策略不开启
     option: null,
+    trainId: null,
   },
 
   effects: {
@@ -67,6 +71,22 @@ const Model = {
       });
       if (callback) callback();
     },
+    *saveOrder({ payload, callback }, { call, put }) {
+      const response = yield call(saveOrder, payload);
+      yield put({
+        type: 'update',
+        payload: response,
+      });
+      if (callback) callback();
+    },
+    *trainRecord({ payload, callback }, { call, put }) {
+      const response = yield call(trainRecord, payload);
+      yield put({
+        type: 'update',
+        payload: response,
+      });
+      if (callback) callback();
+    },
   },
 
   // reducers：将数据返回给页面
@@ -99,9 +119,9 @@ const Model = {
     get(state, action) {
       return {
         ...state,
-        currentInterest: action.payload.currentInterest,
-        availableFund: action.payload.availableFund,
-        tempCurrentInterest: action.payload.currentInterest,
+        // currentInterest: action.payload.currentInterest,
+        // availableFund: action.payload.availableFund,
+        // tempCurrentInterest: action.payload.currentInterest,
       };
     },
   },

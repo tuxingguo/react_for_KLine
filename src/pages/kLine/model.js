@@ -18,6 +18,7 @@ const Model = {
     profit: 0,
     orderPrice: 0,
     fields: [],
+    initialInterest: 1000000,
 
     currentInterest: 1000000, // 期初设置为100,0000
     availableFund: 1000000, // 期初设置为100,0000

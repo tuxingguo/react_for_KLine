@@ -91,9 +91,9 @@ export default class PerformanceList extends Component {
             pathname: '/categoryList/kLine',
             state: { // state字段可以自定义，如用params等也可以
                 TRANSCODE: r.TRANSCODE,
-                HYCS: r.HYCS,
-                ZXDBJ: r.ZXDBJ,
-                BZJB: r.BZJB,
+                HYCS: r.HYCS, // 合约乘数
+                ZXDBJ: r.ZXDBJ, // 最小变动价
+                BZJB: r.BZJB, // 保证金比
                 TRANSETYPE: r.TRANSETYPE,
                 CYCLE: this.state.cycle,
             },

@@ -13,7 +13,7 @@ const CreateForm = props => {
   const { handleOrder, handleWatchOn, handRestart, positionData, getDefaultVlaue,
     advisePrice, currentInterest, handNum, isOver, profit, profitClose, count, direction,
     openOrClose, minPriceChange, openCollapse, strategyIsOpen, setStrategyTrue,
-    setStrategyFasle, openSetStopLoss, availableFund, bond } = props;
+    setStrategyFasle, openSetStopLoss, availableFund, bond, fundId } = props;
 
   const okHandle = () => {
     form.validateFieldsAndScroll((err, fieldsValue) => {
@@ -131,11 +131,6 @@ const CreateForm = props => {
           <span>{numeral(r.BOND).format('0,0.00')}</span>
         ),
     }];
-
-  const gridStyle = {
-    width: '30%',
-    textAlign: 'center',
-  };
 
   return (
     <Collapse style={{ margin: '1%' }} onChange={callback} >
@@ -276,7 +271,7 @@ const CreateForm = props => {
                     <Col span={8} style={{ borderRight: '1px solid #1890ff', textAlign: 'center' }}>
                       <Statistic
                         title="资产账号"
-                        value="800009022"
+                        value={fundId}
                         valueStyle={{ color: '#cf1322', fontSize: '16px' }}
                       />
                     </Col>

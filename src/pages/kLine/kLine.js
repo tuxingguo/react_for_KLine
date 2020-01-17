@@ -71,7 +71,7 @@ export default class Lines extends React.Component {
                 transCode: this.state.transCode,
             },
         });
-        this.props.kLine.trainId = '80000902220200115142930' // 初始化训练Id
+        this.props.kLine.trainId = currentUser.userId + moment().format('YYYYMMDDHHmmss'); // 初始化训练Id
     }
 
     // 组件即将销毁
@@ -377,7 +377,7 @@ export default class Lines extends React.Component {
         });
 
         if (fields.price * fields.num * this.state.transUnit * this.state.transMargin >
-            this.props.kLine.availableFund) {
+            this.props.kLine.availableFund && fields.openOrClose === '1') {
             message.error('资金不足');
             return;
         }
@@ -956,13 +956,18 @@ export default class Lines extends React.Component {
                 trainId: this.props.kLine.trainId,
                 userId: currentUser.userId,
                 transCode: this.state.transCode,
-                bond: this.props.kLine.bond,
-                profitInPosition: this.props.kLine.profit,
-                profitInClosePosition: this.props.kLine.profitClose,
-                currentInterest: this.props.kLine.tempCurrentInterest,
-                availableFund: this.props.kLine.availableFund,
-                rateOfRetracement: 0,
-                rateOfReturn: 0,
+                transType: this.state.transType,
+                initialInterest: this.props.kLine.initialInterest, // 期初权益
+                bond: this.props.kLine.bond, // 保证金
+                profitInPosition: this.props.kLine.profit, // 持仓盈亏
+                profitInClosePosition: this.props.kLine.profitClose, // 平仓盈亏
+                allProfit: this.props.kLine.profit + this.props.kLine.profitClose, // 总盈亏
+                currentInterest: this.props.kLine.tempCurrentInterest, // 当前权益
+                availableFund: this.props.kLine.availableFund, // 可用资金
+                rateOfRetracement: 0, // 回撤率
+                // 收益率 = （当前权益 - 期初权益）/期初权益
+                rateOfReturn: (this.props.kLine.tempCurrentInterest -
+                    this.props.kLine.initialInterest) / this.props.kLine.initialInterest * 100,
                 trainOverTime: moment().format('YYYY-MM-DD HH:mm:ss'),
             },
         });
@@ -1017,6 +1022,8 @@ export default class Lines extends React.Component {
             childrenDrawer2, transCode, transType, stopLoss, stopProfit, overVisible,
             priceDifference, stopLossIsOpen1, stopLossIsOpen2, rateLevel } = this.state;
 
+        const { currentUser = {} } = this.props;
+
         console.log('重新渲染了');
 
         return (
@@ -1047,6 +1054,7 @@ export default class Lines extends React.Component {
                     availableFund={availableFund}
                     minPriceChange={minPriceChange}
                     strategyIsOpen={strategyIsOpen}
+                    fundId={currentUser.userId}
 
                 />
                 <div>

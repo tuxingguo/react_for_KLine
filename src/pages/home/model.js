@@ -1,4 +1,7 @@
-import { getUserInfoById, getRateOfReturn, getProfitByUserId, getCategoryProfit } from './service';
+import {
+    getUserInfoById, getRateOfReturn, getProfitByUserId, getCategoryProfit,
+    getCategoryHand, getRetracement, getAccountRisk
+} from './service';
 
 const Model = {
     namespace: 'home',
@@ -13,6 +16,9 @@ const Model = {
         trainOverTime: [],
         allProfit: [],
         cateDataList: [],
+        handDataList: [],
+        rateOfRetracement: [],
+        rateOfRisk: [],
     },
     // effects： 处理所有的异步逻辑，将返回结果以Action的形式交给reducer处理
     effects: {
@@ -30,7 +36,9 @@ const Model = {
                 type: 'getReturn',
                 payload: response,
             });
-            if (callback) callback();
+            if (callback && typeof callback === 'function') {
+                callback(response); // 返回结果
+            }
         },
         *getProfitByUserId({ payload, callback }, { call, put }) {
             const response = yield call(getProfitByUserId, payload);
@@ -44,6 +52,30 @@ const Model = {
             const response = yield call(getCategoryProfit, payload);
             yield put({
                 type: 'getCategory',
+                payload: response,
+            });
+            if (callback) callback();
+        },
+        *getCategoryHand({ payload, callback }, { call, put }) {
+            const response = yield call(getCategoryHand, payload);
+            yield put({
+                type: 'getHand',
+                payload: response,
+            });
+            if (callback) callback();
+        },
+        *getRetracement({ payload, callback }, { call, put }) {
+            const response = yield call(getRetracement, payload);
+            yield put({
+                type: 'getRetrace',
+                payload: response,
+            });
+            if (callback) callback();
+        },
+        *getAccountRisk({ payload, callback }, { call, put }) {
+            const response = yield call(getAccountRisk, payload);
+            yield put({
+                type: 'getRisk',
                 payload: response,
             });
             if (callback) callback();
@@ -73,6 +105,24 @@ const Model = {
             return {
                 ...state,
                 cateDataList: action.payload.cateDataList,
+            };
+        },
+        getHand(state, action) {
+            return {
+                ...state,
+                handDataList: action.payload.handDataList,
+            };
+        },
+        getRetrace(state, action) {
+            return {
+                ...state,
+                rateOfRetracement: action.payload.rateOfRetracement,
+            };
+        },
+        getRisk(state, action) {
+            return {
+                ...state,
+                rateOfRisk: action.payload.rateOfRisk,
             };
         },
     },

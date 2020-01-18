@@ -27,3 +27,24 @@ export async function getCategoryProfit(params) {
     data: { ...params, method: 'post' },
   });
 }
+
+export async function getCategoryHand(params) {
+  return request('/server/user/getCategoryHand', {
+    method: 'POST',
+    data: { ...params, method: 'post' },
+  });
+}
+
+export async function getRetracement(params) {
+  return request('/server/user/getRetracement', {
+    method: 'POST',
+    data: { ...params, method: 'post' },
+  });
+}
+
+export async function getAccountRisk(params) {
+  return request('/server/user/getAccountRisk', {
+    method: 'POST',
+    data: { ...params, method: 'post' },
+  });
+}

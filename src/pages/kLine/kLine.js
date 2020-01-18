@@ -105,6 +105,7 @@ export default class Lines extends React.Component {
     handRestart = () => {
         this.clearTheComponent();
         const { dispatch } = this.props;
+        const { currentUser = {} } = this.props;
         dispatch({
             type: 'kLine/getNextTick',
             payload: {
@@ -115,6 +116,7 @@ export default class Lines extends React.Component {
                 end: this.props.kLine.end,
             },
         });
+        this.props.kLine.trainId = currentUser.userId + moment().format('YYYYMMDDHHmmss');
     }
 
     getOption = () => {
@@ -164,8 +166,7 @@ export default class Lines extends React.Component {
 
         const option = {
             title: {
-                text: '',
-                left: 0,
+                text: '', left: 0,
             },
             tooltip: {
                 trigger: 'axis',
@@ -183,19 +184,11 @@ export default class Lines extends React.Component {
                 data: ['分钟K', 'MA5', 'MA10', 'MA20', 'MA30'],
             },
             grid: [{
-                left: '5%',
-                right: '1%',
-                height: '60%',
+                left: '5%', right: '1%', height: '60%',
             }, {
-                left: '5%',
-                right: '1%',
-                top: '75%',
-                height: '16%',
+                left: '5%', right: '1%', top: '75%', height: '16%',
             }, {
-                left: '5%',
-                right: '1%',
-                top: '87%',
-                height: '8%',
+                left: '5%', right: '1%', top: '87%', height: '8%',
             }],
             xAxis: [{
                 type: 'category',
@@ -225,7 +218,6 @@ export default class Lines extends React.Component {
                 gridIndex: 2,
                 axisLine: { show: false },
                 axisTick: { show: false },
-                // data: data.categoryData,
                 axisLabel: {
                     show: false,
                 },
@@ -240,8 +232,7 @@ export default class Lines extends React.Component {
                 gridIndex: 1,
                 splitNumber: 3,
                 axisLine: {
-                    onZero: false,
-                    show: false,
+                    onZero: false, show: false,
                 },
                 axisTick: {
                     show: false,
@@ -256,8 +247,7 @@ export default class Lines extends React.Component {
                 gridIndex: 2,
                 splitNumber: 4,
                 axisLine: {
-                    onZero: false,
-                    show: false,
+                    onZero: false, show: false,
                 },
                 axisTick: {
                     show: false,
@@ -500,9 +490,9 @@ export default class Lines extends React.Component {
                 profitInClosePosition: this.props.kLine.profitClose, // 平仓盈亏
                 currentInterest: this.props.kLine.tempCurrentInterest, // 当前权益
                 availableFund, // 可用资金
+                orderTime: moment().format('YYYY-MM-DD HH:mm:ss'),
             },
         });
-        console.log('profitClose=', this.props.kLine.profitClose);
     }
 
     // 观望
@@ -570,9 +560,9 @@ export default class Lines extends React.Component {
                 profitInPosition: this.props.kLine.profit, // 浮动盈亏
                 profitInClosePosition: this.props.kLine.profitClose, // 平仓盈亏
                 currentInterest: this.props.kLine.tempCurrentInterest, // 当前权益
+                orderTime: moment().format('YYYY-MM-DD HH:mm:ss'),
             },
         });
-        console.log('profitClose=', this.props.kLine.profitClose);
     }
 
     // 持仓函数
@@ -964,7 +954,6 @@ export default class Lines extends React.Component {
                 allProfit: this.props.kLine.profit + this.props.kLine.profitClose, // 总盈亏
                 currentInterest: this.props.kLine.tempCurrentInterest, // 当前权益
                 availableFund: this.props.kLine.availableFund, // 可用资金
-                rateOfRetracement: 0, // 回撤率
                 // 收益率 = （当前权益 - 期初权益）/期初权益
                 rateOfReturn: (this.props.kLine.tempCurrentInterest -
                     this.props.kLine.initialInterest) / this.props.kLine.initialInterest * 100,

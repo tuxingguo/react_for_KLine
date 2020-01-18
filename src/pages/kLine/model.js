@@ -20,8 +20,8 @@ const Model = {
     fields: [],
     initialInterest: 1000000,
 
-    currentInterest: 1000000, // 期初设置为100,0000
-    availableFund: 1000000, // 期初设置为100,0000
+    currentInterest: 1000000, // 当前权益设置为100,0000
+    availableFund: 1000000, // 可用设置为100,0000
     availableFundFix: 1000000,
     tempProfitClose: 0,
     tempCurrentInterest: 1000000,

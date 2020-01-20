@@ -147,6 +147,27 @@ export default class Home extends Component {
           textStyle: false,
         },
       ],
+      graphic: [
+        {
+          type: 'group',
+          left: 'center',
+          top: 'center',
+          z: 100,
+          children: [
+            {
+              type: 'text',
+              left: 'center',
+              top: 'center',
+              z: 100,
+              style: {
+                fontSize: 18,
+                text: dataX.length === 0 ? '暂无数据' : '',
+                font: 'bold 26px Microsoft YaHei',
+              },
+            },
+          ],
+        },
+      ],
       series: [
         {
           name: '收益率',
@@ -217,6 +238,27 @@ export default class Home extends Component {
           end: 100,
           filterMode: 'weakFilter',
           textStyle: false,
+        },
+      ],
+      graphic: [
+        {
+          type: 'group',
+          left: 'center',
+          top: 'center',
+          z: 100,
+          children: [
+            {
+              type: 'text',
+              left: 'center',
+              top: 'center',
+              z: 100,
+              style: {
+                fontSize: 18,
+                text: datax.length === 0 ? '暂无数据' : '',
+                font: 'bold 26px Microsoft YaHei',
+              },
+            },
+          ],
         },
       ],
       series: [{
@@ -304,6 +346,27 @@ export default class Home extends Component {
 
         selected: data.selected,
       },
+      graphic: [
+        {
+          type: 'group',
+          left: 'center',
+          top: 'center',
+          z: 100,
+          children: [
+            {
+              type: 'text',
+              left: 'center',
+              top: 'center',
+              z: 100,
+              style: {
+                fontSize: 18,
+                text: data.seriesData.length === 0 ? '暂无数据' : '',
+                font: 'bold 26px Microsoft YaHei',
+              },
+            },
+          ],
+        },
+      ],
       series: [
         {
           type: 'pie',
@@ -378,7 +441,7 @@ export default class Home extends Component {
         data: ['累计盈利额', '累计手数'],
       },
       grid: {
-        top: '17%',
+        top: '20%',
         left: '3%',
         right: '5%',
         bottom: '16%',
@@ -425,6 +488,27 @@ export default class Home extends Component {
           end: 100,
           filterMode: 'weakFilter',
           textStyle: false,
+        },
+      ],
+      graphic: [
+        {
+          type: 'group',
+          left: 'center',
+          top: 'center',
+          z: 100,
+          children: [
+            {
+              type: 'text',
+              left: 'center',
+              top: 'center',
+              z: 100,
+              style: {
+                fontSize: 18,
+                text: data.profitData.length === 0 ? '暂无数据' : '',
+                font: 'bold 26px Microsoft YaHei',
+              },
+            },
+          ],
         },
       ],
       series: [
@@ -489,7 +573,7 @@ export default class Home extends Component {
         data: ['资金回撤率'],
       },
       grid: {
-        top: '20%',
+        top: '18%',
         left: '3%',
         right: '5%',
         bottom: '18%',
@@ -534,6 +618,27 @@ export default class Home extends Component {
           end: 100,
           filterMode: 'weakFilter',
           textStyle: false,
+        },
+      ],
+      graphic: [
+        {
+          type: 'group',
+          left: 'center',
+          top: 'center',
+          z: 100,
+          children: [
+            {
+              type: 'text',
+              left: 'center',
+              top: 'center',
+              z: 100,
+              style: {
+                fontSize: 18,
+                text: dataX.length === 0 ? '暂无数据' : '',
+                font: 'bold 26px Microsoft YaHei',
+              },
+            },
+          ],
         },
       ],
       series: [
@@ -576,7 +681,7 @@ export default class Home extends Component {
         data: ['风险度'],
       },
       grid: {
-        top: '20%',
+        top: '16%',
         left: '3%',
         right: '5%',
         bottom: '18%',
@@ -623,6 +728,27 @@ export default class Home extends Component {
           textStyle: false,
         },
       ],
+      graphic: [
+        {
+          type: 'group',
+          left: 'center',
+          top: 'center',
+          z: 100,
+          children: [
+            {
+              type: 'text',
+              left: 'center',
+              top: 'center',
+              z: 100,
+              style: {
+                fontSize: 18,
+                text: dataX.length === 0 ? '暂无数据' : '',
+                font: 'bold 26px Microsoft YaHei',
+              },
+            },
+          ],
+        },
+      ],
       series: [
         {
           name: '风险度',
@@ -656,7 +782,6 @@ export default class Home extends Component {
   };
 
   render() {
-    const datax = this.props.home.trainOverTime;
     const profitTip = () => ({ __html: '备注说明：\n1、单次训练盈亏：平仓盈亏+浮动盈亏，未包含手续费。\n2、如果单次盈亏>0，则盈利，其他情况均为亏损。即红线露出为盈利，其他情况亏损。' })
     const categoryTip = () => ({ __html: '备注说明：若当前某品种的盈亏为负，则在上图显示金额与占比均为0。' })
     const reTraceTip = () => ({ __html: '备注说明：\n1、指标解释：在单次训练期内，账户净值从最高峰回落到最低谷，账户净值下跌幅度相对最高峰的比值，反映了账户操作者在整个阶段的风险控制能力。\n2、指标公式：（最高点净值-最低点净值）/最高点净值 * 100%。' })
@@ -665,53 +790,58 @@ export default class Home extends Component {
       <div>
         <Tabs defaultActiveKey="1" size="large">
           <TabPane tab="账户概况" key="1">
-            <div style={{ width: '80%', margin: '0 auto' }}>
+            <div style={{ width: '90%', margin: '0 auto', backgroundColor: '#e9ebee' }}>
               <ReactEcharts
                 option={this.getOptionForReturn()}
+                style={{ width: '90%', margin: '0 auto' }}
               />
             </div>
-            <div style={{ width: '80%', margin: '0 auto', marginTop: '5%' }}>
-              <ReactEcharts
-                option={this.getOptionForProfit()}
-              />
+            <div style={{ width: '90%', margin: '0 auto', marginTop: '5%', backgroundColor: '#e9ebee' }}>
               <div>
-                <Alert
-                  type="info"
-                  style={{ width: '90%', margin: '0 auto', marginTop: '2%', whiteSpace: 'pre-wrap' }}
-                  description={
-                    <div style={{ fontSize: '13px', marginTop: '-10px' }} dangerouslySetInnerHTML={profitTip()} />
-                  }
+                <ReactEcharts
+                  option={this.getOptionForProfit()}
+                  style={{ width: '90%', margin: '0 auto' }}
                 />
+                <div>
+                  <Alert
+                    type="info"
+                    style={{ width: '90%', margin: '0 auto', marginTop: '2%', whiteSpace: 'pre-wrap' }}
+                    description={
+                      <div style={{ fontSize: '13px', marginTop: '-10px' }} dangerouslySetInnerHTML={profitTip()} />
+                    }
+                  />
+                </div>
               </div>
             </div>
           </TabPane>
           <TabPane tab="交易偏好" key="2">
-            <div style={{ width: '80%', margin: '0 auto', height: '400px' }}>
+            <div style={{ width: '90%', margin: '0 auto', backgroundColor: '#e9ebee' }}>
               <ReactEcharts
                 option={this.getOptionforCategory()}
-                style={{ height: '100%' }}
+                style={{ width: '90%', margin: '0 auto' }}
               />
+              <div>
+                <Alert
+                  type="info"
+                  style={{ width: '70%', marginLeft: '10%', marginTop: '2%', whiteSpace: 'pre-wrap' }}
+                  description={
+                    <div style={{ fontSize: '13px', marginTop: '-8px' }} dangerouslySetInnerHTML={categoryTip()} />
+                  }
+                />
+              </div>
             </div>
-            <div>
-              <Alert
-                type="info"
-                style={{ width: '70%', marginLeft: '10%', marginTop: '-5%', whiteSpace: 'pre-wrap' }}
-                description={
-                  <div style={{ fontSize: '13px', marginTop: '-8px' }} dangerouslySetInnerHTML={categoryTip()} />
-                }
-              />
-            </div>
-            <div style={{ width: '80%', margin: '0 auto', marginTop: '5%', height: '350px' }}>
+            <div style={{ width: '90%', margin: '0 auto', marginTop: '5%', backgroundColor: '#e9ebee' }}>
               <ReactEcharts
                 option={this.getOptionForHandNum()}
-                style={{ height: '100%' }}
+                style={{ width: '90%', margin: '0 auto' }}
               />
             </div>
           </TabPane>
           <TabPane tab="风控能力" key="3">
-            <div style={{ width: '80%', margin: '0 auto' }}>
+            <div style={{ width: '90%', margin: '0 auto', backgroundColor: '#e9ebee' }}>
               <ReactEcharts
                 option={this.getOptionRetracement()}
+                style={{ width: '90%', margin: '0 auto' }}
               />
               <div>
                 <Alert
@@ -723,9 +853,10 @@ export default class Home extends Component {
                 />
               </div>
             </div>
-            <div style={{ width: '80%', margin: '0 auto', marginTop: '5%' }}>
+            <div style={{ width: '90%', margin: '0 auto', marginTop: '5%', backgroundColor: '#e9ebee' }}>
               <ReactEcharts
                 option={this.getOptionRisk()}
+                style={{ width: '90%', margin: '0 auto' }}
               />
             </div>
           </TabPane>

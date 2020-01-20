@@ -41,3 +41,10 @@ export async function confirmOldPassword(value) {
         data: value,
     });
 }
+
+export async function getUserSituation(params) {
+    return request('/server/user/getUserSituation', {
+        method: 'POST',
+        data: { ...params, method: 'post' },
+    });
+}

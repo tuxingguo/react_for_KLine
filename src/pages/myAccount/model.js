@@ -1,4 +1,5 @@
-import { checkUserName, updateMyInfo, getUserInfoById, updatePassword, updateMyFund, confirmOldPassword } from './service';
+import { checkUserName, updateMyInfo, getUserInfoById, updatePassword,
+    updateMyFund, confirmOldPassword, getUserSituation } from './service';
 
 const Model = {
     namespace: 'myAccount',
@@ -10,6 +11,14 @@ const Model = {
         password: '',
         PwdStrength: '',
         availableFund: 0.00,
+
+        maxRateOfReturn: 0,
+        profitRate: 0,
+        avgRisk: 0,
+        countProfit: 0,
+        countLoss: 0,
+        maxRateOfRetrace: 0,
+        sumHandNum: 0,
     },
     // effects： 处理所有的异步逻辑，将返回结果以Action的形式交给reducer处理
     effects: {
@@ -67,6 +76,14 @@ const Model = {
             });
             return response;
         },
+        *getUserSituation({ payload, callback }, { call, put }) {
+            const response = yield call(getUserSituation, payload);
+            yield put({
+                type: 'getSitu',
+                payload: response,
+            });
+            return response;
+        },
     },
     // reducers：将数据返回给页面
     reducers: {
@@ -95,6 +112,19 @@ const Model = {
         checkPwd(state, { payload }) {
             return {
                 ...state,
+            };
+        },
+        getSitu(state, action) {
+            console.log('action.payload=', action.payload);
+            return {
+                ...state,
+                maxRateOfReturn: action.payload.maxRateOfReturn,
+                profitRate: action.payload.profitRate,
+                avgRisk: action.payload.avgRisk,
+                countProfit: action.payload.countProfit,
+                countLoss: action.payload.countLoss,
+                maxRateOfRetrace: action.payload.maxRateOfRetrace,
+                sumHandNum: action.payload.sumHandNum,
             };
         },
     },

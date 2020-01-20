@@ -789,7 +789,7 @@ export default class Home extends Component {
     return (
       <div>
         <Tabs defaultActiveKey="1" size="large">
-          <TabPane tab="账户概况" key="1">
+          <TabPane tab="账户收益" key="1">
             <div style={{ width: '90%', margin: '0 auto', backgroundColor: '#e9ebee' }}>
               <ReactEcharts
                 option={this.getOptionForReturn()}

@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Form, Row, Col, Input, Button, List, Popconfirm, message } from 'antd';
+import { Form, Row, Col, Input, Button, List, Popconfirm, message, Descriptions, Badge } from 'antd';
 import { formatMessage } from 'umi-plugin-react/locale';
 import { connect } from 'dva';
 import { FORM_ITEM_LAYOUT } from '../../layout';
@@ -30,6 +30,7 @@ export default class MyAccount extends Component {
 
     componentWillMount() {
         this.refreshAccountInfo();
+        this.fetchUserSituation();
     }
 
     refreshAccountInfo = () => {
@@ -48,6 +49,17 @@ export default class MyAccount extends Component {
                 this.props.myAccount.availableFund = res.availableFund;
             },
         });
+    }
+
+    fetchUserSituation = () => {
+        const { dispatch } = this.props;
+        const { currentUser = {} } = this.props;
+        dispatch({
+            type: 'myAccount/getUserSituation',
+            payload: {
+              userId: currentUser.userId,
+            },
+          });
     }
 
     handleUserName = (rule, value, callback) => {
@@ -230,7 +242,10 @@ export default class MyAccount extends Component {
     }
 
     render() {
-        const { userName, email, profile, PwdStrength, availableFund } = this.props.myAccount;
+        const { currentUser = {} } = this.props;
+        const userIdOnlyRead = currentUser.userId;
+        const { userName, email, profile, PwdStrength, maxRateOfReturn, profitRate, avgRisk,
+            countProfit, countLoss, maxRateOfRetrace, sumHandNum } = this.props.myAccount;
         const { getFieldDecorator } = this.props.form;
         const data = [
             {
@@ -239,12 +254,12 @@ export default class MyAccount extends Component {
                 description: '当前密码强度：',
                 result: PwdStrength === 'middle' ? '中' : '强',
             },
-            {
-                key: 2,
-                title: '入金管理',
-                description: '当前可用资金：',
-                result: `￥ ${availableFund.toFixed(2)}`,
-            },
+            // {
+            //     key: 2,
+            //     title: '入金管理',
+            //     description: '当前可用资金：',
+            //     result: `￥ ${availableFund.toFixed(2)}`,
+            // },
         ];
         const { passVisible, help, visible, fundVisible } = this.state;
         const parentMethods = {
@@ -263,6 +278,25 @@ export default class MyAccount extends Component {
             <div>
                 <PageCard title="基本信息">
                     <Form>
+                        <Row gutter={8}>
+                            <Col span={16} style={{ marginLeft: '6%' }}>
+                                <FormItem
+                                    label="资产账号"
+                                    {...FORM_ITEM_LAYOUT.formItemLayout34}
+                                >
+                                    {getFieldDecorator('userId', {
+                                        rules: [
+                                            {
+                                                required: false,
+                                            },
+                                        ],
+                                        initialValue: userIdOnlyRead,
+                                    })(
+                                        <Input readOnly disabled />,
+                                    )}
+                                </FormItem>
+                            </Col>
+                        </Row>
                         <Row gutter={8} >
                             <Col span={16} style={{ marginLeft: '6%' }}>
                                 <FormItem
@@ -327,7 +361,7 @@ export default class MyAccount extends Component {
                                         <Input.TextArea
                                             placeholder="介绍下自己吧~"
                                             rows={4}
-                                            maxlength="400"
+                                            maxLength="400"
                                         />,
                                     )}
                                 </FormItem>
@@ -340,6 +374,17 @@ export default class MyAccount extends Component {
                         </div>
                     </Form>
                 </PageCard >
+                <PageCard title="账户概况">
+                    <Descriptions bordered>
+                        <Descriptions.Item label="最大收益率">{maxRateOfReturn.toFixed(4)} %</Descriptions.Item>
+                        <Descriptions.Item label="盈亏比">{profitRate.toFixed(4)}</Descriptions.Item>
+                        <Descriptions.Item label="平均风险度">{avgRisk.toFixed(4)} %</Descriptions.Item>
+                        <Descriptions.Item label="累计盈利次数">{countProfit} 次</Descriptions.Item>
+                        <Descriptions.Item label="累计亏损次数">{countLoss} 次</Descriptions.Item>
+                        <Descriptions.Item label="最大回撤率">{maxRateOfRetrace.toFixed(4)} %</Descriptions.Item>
+                        <Descriptions.Item label="累计交易手数" span={3}>{sumHandNum} 手</Descriptions.Item>
+                    </Descriptions>
+                </PageCard>
                 <PageCard title="安全设置">
                     <List
                         className="demo-loadmore-list"

@@ -137,7 +137,7 @@ const CreateForm = props => {
       <Panel header="打开交易面板" style={{ fontSize: '13px' }}>
         <Progress percent={count * 10} status="active" />
         <div style={{ float: 'left', width: '100%', height: '300px' }}>
-          <div style={{ width: '40%', float: 'left' }}>
+          <div style={{ width: '42%', float: 'left', marginRight: '1.5%', backgroundColor: '#fafafa', border: '1px solid #efefef' }}>
             <Form>
               <Row gutter={8}>
                 <Col span={24}>
@@ -213,7 +213,7 @@ const CreateForm = props => {
                   </FormItem>
                 </Col>
               </Row>
-              <div style={{ marginLeft: '12%', marginBottom: '2%' }}>
+              <div style={{ marginLeft: '12%', marginBottom: '2%', marginTop: 8 }}>
                 <Button type="primary" style={{ width: '25%' }} onClick={() => okHandle()} disabled={isOver === true} >下单</Button>
                 <Button type="primary" style={{ width: '25%', marginLeft: '10%' }} onClick={() => watchOn()} disabled={isOver === true} >观望</Button>
                 {
@@ -263,7 +263,7 @@ const CreateForm = props => {
               </div>
             </Form>
           </div>
-          <div style={{ width: '55%', float: 'left', height: '100%' }}>
+          <div style={{ width: '52%', float: 'left', height: '100%' }}>
             <div style={{ height: '50%' }}>
               <Card style={{ background: '#fafafa' }}>
                 <Row gutter={12} style={{ marginBottom: 10, marginTop: -5 }}>

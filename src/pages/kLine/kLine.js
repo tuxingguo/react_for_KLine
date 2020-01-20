@@ -530,11 +530,13 @@ export default class Lines extends React.Component {
                 }
             },
         });
+        let tempBond = 0;
         const contrastPrice = this.props.kLine.nextTick[2];
         let tempProfit = 0;
         // 需要计算持仓盈亏，遍历持仓数据
         this.props.kLine.profit = 0;
         this.props.kLine.positionData.map(item => {
+            tempBond += item.BOND; // 保证金
             // 判断方向
             if (item.DIRECTION === '1') {
                 tempProfit = Number(((contrastPrice - item.OPENCOST) *
@@ -557,6 +559,7 @@ export default class Lines extends React.Component {
                 trainId: this.props.kLine.trainId,
                 action: 'watch',
                 instrumentId: this.props.kLine.mainContract,
+                bond: tempBond,
                 profitInPosition: this.props.kLine.profit, // 浮动盈亏
                 profitInClosePosition: this.props.kLine.profitClose, // 平仓盈亏
                 currentInterest: this.props.kLine.tempCurrentInterest, // 当前权益

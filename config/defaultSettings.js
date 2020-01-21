@@ -10,7 +10,7 @@ export default {
   menu: {
     locale: true,
   },
-  title: '期货下单投教系统',
+  title: '期货下单训练系统',
   pwa: false,
   iconfontUrl: '',
 };

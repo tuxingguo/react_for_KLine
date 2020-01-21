@@ -44,7 +44,7 @@ const UserLayout = props => {
                 <span className={styles.title}>西 南 期 货</span>
               </Link>
             </div>
-            <div className={styles.desc}>期货下单投教系统，采用真实行情，融入简单策略，让下单更快乐</div>
+            <div className={styles.desc}>期货下单训练系统，采用真实行情，融入简单策略，让下单更安心</div>
           </div>
           {children}
         </div>
